@@ -46,26 +46,6 @@ class _CameraShotScreenState extends State<CameraShotScreen> {
     
   }
 
-  Future<void> _redirectToDisplayImage(XFile? takenImage) async {
-
-    print("redirectToDisplayImage called with: ${takenImage?.path}");
-    if(takenImage != null) {
-      final inputImage = InputImage.fromFilePath(takenImage.path);
-      final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
-      final recognizedText = await textRecognizer.processImage(inputImage);
-
-      final image = File(takenImage.path);
-
-      print(recognizedText);
-
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: image, recognizedText: recognizedText.text)));
-    
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("No se selecciono imagen")));
-    }
-    
-  }
-
   @override
   void dispose() {
     _controller?.dispose();
@@ -113,7 +93,7 @@ class _CameraShotScreenState extends State<CameraShotScreen> {
               child: FloatingActionButton(
                 onPressed: _takePicture,
                 backgroundColor: Colors.white,
-                child: Icon(Icons.camera, color: Colors.black),
+                child: const Icon(Icons.camera, color: Colors.black),
               ),
             ),
           ),
