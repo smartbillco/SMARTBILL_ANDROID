@@ -39,8 +39,6 @@ class _CameraShotScreenState extends State<CameraShotScreen> {
     
     File image = File(imageFile.path);
 
-    print(recognizedText.text);
-
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: image, recognizedText: recognizedText.text)));
 
     
@@ -56,7 +54,7 @@ class _CameraShotScreenState extends State<CameraShotScreen> {
   @override
   Widget build(BuildContext context) {
     if (_controller == null || !_controller!.value.isInitialized) {
-      return Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator());
     }
 
     return Scaffold(
