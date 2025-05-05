@@ -5,7 +5,7 @@ import 'package:smartbill/services/db.dart';
 class PdfHandler {
 
   //Read new Colombian QR code
-  Map<String, dynamic> parseQrColombia(String qrResult) {
+  dynamic parseQrColombia(String qrResult) {
 
     bool isColonAfterNumFac(String input) {
       RegExp regex = RegExp(r'NumFac\s*([=:])');
@@ -19,8 +19,11 @@ class PdfHandler {
     try {
       
       if(isColonAfterNumFac(qrResult)) {
-        List lines = qrResult.contains(' ') ? qrResult.split(' ') : qrResult.split('\n');
+        print("QR: $qrResult");
+        List lines = qrResult.contains('\n') ? qrResult.split('\n') : qrResult.split(' ');
+        print("lines: $lines");
         List qrList = lines.map((item) => item.split(':').last).toList();
+        print("QR list: $qrList");
         List keys = ['bill_number', 'date', 'time', 'nit', 'customer_id', 'amount_before_iva', 'iva', 'other_tax', 'total_amount', 'cufe', 'dian_link'];
 
         Map<String, dynamic> qrPdf = {};
@@ -38,7 +41,7 @@ class PdfHandler {
         return qrPdf;
 
       } else {
-        List lines = qrResult.contains(' ') ? qrResult.split(' ') : qrResult.split('\n');
+        List lines = qrResult.contains('\n') ? qrResult.split('\n') : qrResult.split(' ');
         List qrList = lines.map((item) => item.split('=')[1].split(' ')[0]).toList();
         List keys = ['bill_number', 'date', 'time', 'nit', 'customer_id', 'amount_before_iva', 'iva', 'other_tax', 'total_amount', 'cufe', 'dian_link'];
 
