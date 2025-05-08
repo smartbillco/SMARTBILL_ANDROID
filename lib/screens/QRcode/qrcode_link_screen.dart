@@ -19,6 +19,7 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
   late InAppWebViewController webViewController;
   bool isLoading = false;
   bool cloudflarePassed = false;
+  bool hasCheckedUrl = false;
 
   //DIAN receipt variables
   String? originalUrl;
@@ -31,6 +32,25 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
     super.initState();
 
   }
+  bool checkIfUrlIsDian(String url) {
+    return url.startsWith("https://catalogo-vpfe.dian.gov.co");
+  }
+
+  dynamic validateIfQRContainsCufe(Uri url) {
+    if(checkIfUrlIsDian(url.toString())) {
+      print("Starts with");
+      if(url.queryParameters.containsKey('DocumentKey')) {
+        print("Contains");
+      } else {
+        if(mounted) {
+          showSnackbar("Parece que tu QR no contiene CUFE. Intenta con otro código");
+        }
+        
+        Navigator.pop(context);
+      }
+      
+    } 
+  } 
 
   void showSnackbar(String content) {
     final snackbar = SnackBar(content: Text(content));
@@ -104,8 +124,13 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
             webViewController = controller;
           },
           onLoadStart: (controller, url) {
+            if(!hasCheckedUrl && url != null) {
+              hasCheckedUrl = true;
+              validateIfQRContainsCufe(Uri.parse(url.toString()));
+            }
             if(url.toString().contains('ShowDocument')) {
               cloudflarePassed = true;
+              print("URL: ${url.toString()}");
             } else {
               cloudflarePassed = false;
             }
@@ -113,13 +138,9 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
             
           },
           onUpdateVisitedHistory: (controller, url, isReload) {
-
             if(originalUrl != null && originalUrl != url.toString() && !hasNavigated && cloudflarePassed) {
               hasNavigated = true;
               Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ConfirmDownloadScreen(url: url.toString())));
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Espera a que cloudflare te autentique")));
-
             }
           },
           onDownloadStartRequest: (controller, request) {

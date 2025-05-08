@@ -30,7 +30,7 @@ class PdfHandler {
 
         for(var i = 0; i < 11; i++){
           if(i >= qrList.length || qrList[i].trim().isEmpty) {
-            qrPdf[keys[i]] = "Vacio2";
+            qrPdf[keys[i]] = "Vacio";
           } else {
             qrPdf[keys[i]] = qrList[i];
           }

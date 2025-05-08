@@ -185,20 +185,20 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
                       Column(
                         children: [
                           const Text("Mis facturas", style: TextStyle(color: Colors.white)),
-                          Text(billsAmount.toString(), style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600)),
+                          Text(billsAmount.toString(), style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600)),
                         ],
                       ),
                       Column(
                         children: [
-                          const Text("Balance", style: TextStyle(color: Colors.white)),
-                          Text("\$${NumberFormat("#,##0.00").format(balance)}", style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w600)),
+                          const Text("Cotización dolar", style: TextStyle(color: Colors.white)),
+                          Text("${_currentCountry.currency} ${NumberFormat("#,##0.00").format(double.parse(data))}", style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w600)),
                         ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 10),
-                  const Text("Cotización del dolar hoy", style: TextStyle(color: Colors.white)),
-                  Text("${_currentCountry.currency} ${NumberFormat("#,##0.00").format(double.parse(data))}", style: const TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 10,),
+                  const Text("Balance", style: TextStyle(color: Colors.white)),
+                  Text("\$${NumberFormat("#,##0.00").format(balance)}", style: TextStyle(color: Colors.white, fontSize: 30, fontWeight: FontWeight.w600)),
                 ],
               ),
             )

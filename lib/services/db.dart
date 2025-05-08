@@ -9,7 +9,7 @@ import 'package:path/path.dart';
     var databasesPath = await getDatabasesPath();
     var path = join(databasesPath, 'smartbill.db');
 
-    return db = await openDatabase(path, version: 6,
+    return db = await openDatabase(path, version: 7,
       onCreate: (Database db, int version) async {
         // Version 1
         await db.execute('''
@@ -43,7 +43,8 @@ import 'package:path/path.dart';
             iva TEXT,
             other_tax TEXT,
             total_amount TEXT,
-            cufe TEXT
+            cufe TEXT,
+            dian_link TEXT
           )
         ''');
 
@@ -135,7 +136,8 @@ import 'package:path/path.dart';
               iva TEXT,
               other_tax TEXT,
               total_amount TEXT,
-              cufe TEXT
+              cufe TEXT,
+              dian_link TEXT
             )
           ''');
 

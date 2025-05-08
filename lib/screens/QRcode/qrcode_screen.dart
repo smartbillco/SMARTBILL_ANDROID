@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:smartbill/screens/QRcode/qrcode_link_screen.dart';
+import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
 import 'package:smartbill/services/colombian_bill.dart';
 import 'package:smartbill/services/pdf.dart';
 import 'package:smartbill/services/peruvian_bill.dart';
@@ -26,7 +27,6 @@ class _QrcodeScreenState extends State<QrcodeScreen> {
   @override
   void initState() {
     super.initState();
-    print(widget.qrResult);
     pdfFormat();
   }
 
@@ -65,7 +65,6 @@ class _QrcodeScreenState extends State<QrcodeScreen> {
 
   void showSnackbar(String content) {
     var snackbar = SnackBar(content: Text(content));
-
     ScaffoldMessenger.of(context).showSnackBar(snackbar);
   }
 
@@ -78,8 +77,15 @@ class _QrcodeScreenState extends State<QrcodeScreen> {
 
 
   Future<void> saveNewColombianBill() async {
-    await colombianBill.saveColombianBill(pdfContent);
-    Navigator.pop(context);
+    dynamic result = await colombianBill.saveColombianBill(pdfContent);
+    if(result == "success") {
+      showSnackbar("Factura guardada");
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ReceiptScreen()));
+    } else {
+      showSnackbar("Hubo un error al guardar la factura");
+      Navigator.pop(context);
+    }
+    
   }
 
   Future<void> saveNewPeruvianBill() async {
@@ -97,9 +103,10 @@ class _QrcodeScreenState extends State<QrcodeScreen> {
       body: Container(
         padding: const EdgeInsets.all(20),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             pdfContent.isEmpty
-            ? Text("Factura no válida, por favor intente con otra factura")
+            ? Padding(padding: const EdgeInsets.all(30.0), child: Text("Factura no válida, por favor intente con otra factura", style: TextStyle(fontSize: 18),))
             :  Expanded(
                 child: isColombia
                 ? _cardColombia(pdfContent, context, saveNewColombianBill)

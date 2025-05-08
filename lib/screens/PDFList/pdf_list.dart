@@ -288,8 +288,8 @@ String? extractTotalPrice(List<String> textList) {
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(data['company'] ?? ''),
-                        Text(data['date'] ?? ''),
+                        Text(data['company'].trim() ?? ''),
+                        Text(data['date'].trim() ?? ''),
                         Text(currencyFormatter.format(total), style: const TextStyle(fontWeight: FontWeight.w600)),
                       ],
                     ),

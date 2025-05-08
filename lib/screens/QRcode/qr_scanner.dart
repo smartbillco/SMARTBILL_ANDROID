@@ -32,7 +32,6 @@ class _QRScannerState extends State<QRScanner> {
 
 
   void _startTimer() {
-    
     _timeoutTimer = Timer(const Duration(seconds: 15), () async {
       if(_scanning) {
         scannerController.stop();
@@ -45,7 +44,7 @@ class _QRScannerState extends State<QRScanner> {
 
   bool checkIfIsUri(String? result) {
     Uri? uri = Uri.tryParse(result!);
-    return uri != null && uri.hasScheme && uri.hasAuthority;
+    return uri != null && uri.hasScheme && uri.hasAuthority && result.startsWith("https://catalogo-vpfe.dian.gov.co");
   } 
 
 
@@ -88,11 +87,17 @@ class _QRScannerState extends State<QRScanner> {
                   .then((value) => scannerController.dispose())
                   .then((value) {
                     var isUri = checkIfIsUri(qrResult.rawValue);
-                    if(isUri) {
+                    if(qrResult.rawValue!.length > 20) {
+                       if(isUri) {
                       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => QrcodeLinkScreen(uri: qrResult.rawValue)));
+                      } else {
+                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => QrcodeScreen(qrResult: qrResult.rawValue!)));
+                      }
                     } else {
-                      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => QrcodeScreen(qrResult: qrResult.rawValue!)));
+                      _showSnackbarError("Parece que el código QR no contiene información relevante.");
+                      Navigator.pop(context);
                     }
+                   
                       
                   });
                               
