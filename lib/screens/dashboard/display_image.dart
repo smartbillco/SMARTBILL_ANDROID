@@ -35,6 +35,40 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
     _extractData();
   }
 
+  String normalizeMoney(String raw) {
+    String cleaned = raw.replaceAll(RegExp(r'\s+'), '');
+
+    // If it has both . and , we determine the decimal separator
+    if (cleaned.contains('.') && cleaned.contains(',')) {
+      if (cleaned.lastIndexOf('.') > cleaned.lastIndexOf(',')) {
+        // Likely US style: 1,000.50
+        cleaned = cleaned.replaceAll(',', '');
+      } else {
+        // Likely EU style: 1.000,50
+        cleaned = cleaned.replaceAll('.', '').replaceAll(',', '.');
+      }
+    } else if (cleaned.contains(',')) {
+      // If only ',' is present, assume it’s decimal if it ends with ,xx
+      if (RegExp(r',\d{2}$').hasMatch(cleaned)) {
+        cleaned = cleaned.replaceAll('.', '').replaceAll(',', '.');
+      } else {
+        // Just thousands separator
+        cleaned = cleaned.replaceAll(',', '');
+      }
+    } else {
+      // Only dots
+      if (RegExp(r'\.\d{2}$').hasMatch(cleaned)) {
+        // Decimal
+        cleaned = cleaned.replaceAll(',', '');
+      } else {
+        // Thousand separator
+        cleaned = cleaned.replaceAll('.', '');
+      }
+    }
+
+    return cleaned;
+  }
+
 
   void _extractData() {
     List<String> extractedLines = widget.recognizedText!.split('\n');
@@ -53,6 +87,7 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
     String companyName = '';
 
     for (var item in extractedLines) {
+
       // Check for dates
       for (final match in dateRegex.allMatches(item)) {
         dates.add(match.group(0)!);
@@ -85,13 +120,15 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
 
 
       // Check for money values
-      if (moneyRegex.hasMatch(item.trim())) {
-      double? value = double.tryParse(item.replaceAll(RegExp(r'[.,]'), '').replaceAll(',', '.'));
+      for (final match in moneyRegex.allMatches(item)) {
+        String matchText = match.group(0)!;
+        String normalized = normalizeMoney(matchText);
+        double? value = double.tryParse(normalized);
 
-      if (value != null && value.toString().length < 10) {
-        moneyValues.add(value);
+        if (value != null && value < 10000000) {
+          moneyValues.add(value);
+        }
       }
-    }
     }
 
     //Pick first line as company name
