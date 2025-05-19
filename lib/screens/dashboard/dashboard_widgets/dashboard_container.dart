@@ -1,8 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:smartbill/screens/PDFList/pdf_list.dart';
 import 'package:smartbill/screens/dashboard/dashboard_widgets/dashboard_carrousel.dart';
-//import 'package:smartbill/screens/camera/camera.dart';
 import 'package:smartbill/screens/expenses/expenses.dart';
 import 'package:smartbill/screens/dashboard/add_bill_choice.dart';
 import 'package:smartbill/screens/dashboard/dashboard_widgets/dashboard_text.dart';
@@ -10,6 +7,8 @@ import 'package:smartbill/screens/QRcode/qr_scanner.dart';
 import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
 import 'package:smartbill/services/pdf.dart';
 import 'package:smartbill/services/xml/xml.dart';
+import 'package:flutter_animate/flutter_animate.dart';
+
 
 class DashboardContainer extends StatefulWidget {
   const DashboardContainer({super.key});
@@ -30,8 +29,6 @@ class _DashboardContainerState extends State<DashboardContainer> {
 
   @override
   Widget build(BuildContext context) {
-
-    final String? phone = FirebaseAuth.instance.currentUser!.phoneNumber;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 18),
@@ -96,25 +93,23 @@ class _DashboardContainerState extends State<DashboardContainer> {
                 ])
             ],
           ),
-
-          //Third row of navigation
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          SizedBox(height: 40),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            spacing: 10,
             children: [
-              phone!.startsWith('+57')
-              ? MenuButton(
-                icon: Icon(Icons.picture_as_pdf_outlined, color: Colors.white, size: 35),
-                text: "PDFs DIAN",
-                redirect: () {
-                  redirectToScreen(const PDFListScreen());
-                },
-                colors: const [
-                  Color.fromARGB(255, 29, 148, 33),
-                  Color.fromARGB(255, 10, 59, 13)
-                ])
-              : SizedBox.shrink()
+              Text("Desliza para ver reportes", style: TextStyle(color: Colors.black45)),
+              Icon(Icons.arrow_forward_ios, size: 20, color: Colors.black45)
             ],
-          ),
+          )
+          .animate()
+          .slideX(
+            begin: -0.2,
+            end: 0,
+            duration: Duration(milliseconds: 1400),
+            curve: Curves.bounceOut
+          )
+
 
         ],
       ),

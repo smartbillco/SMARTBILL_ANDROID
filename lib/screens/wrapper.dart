@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:smartbill/screens/dashboard/dashboard.dart';
 import 'package:smartbill/screens/home/home_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:smartbill/screens/overview/overview.dart';
 
 class Wrapper extends StatefulWidget {
   const Wrapper({super.key});
@@ -23,7 +23,7 @@ class _WrapperState extends State<Wrapper> {
     }
 
     else {
-      return const  DashboardScreen();
+      return const OverviewScreen();
     }
   }
 }

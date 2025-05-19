@@ -89,9 +89,9 @@ class _DashboardCarrouselState extends State<DashboardCarrousel> with RouteAware
     return _isLoading 
     ? Center(child: CircularProgressIndicator())
     : _done && items.isEmpty
-    ? Text("Todavía no tienes cryptomonedas favoritas...")
+    ? Text("Todavía no tienes criptomonedas favoritas...")
     : Column(
-      spacing: 5,
+      spacing: 4,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text("Tus criptomonedas", style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16)),
@@ -101,7 +101,7 @@ class _DashboardCarrouselState extends State<DashboardCarrousel> with RouteAware
             itemCount: items.length,
             itemBuilder: (context, index) {
               return Card(
-                elevation: 3,
+                elevation: 6,
                 child: ListTile(
                     leading: Image.network(items[index]['image'], width: 40, height: 40),
                     title: Text('${items[index]['name']} (${items[index]['symbol']})', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),),

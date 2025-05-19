@@ -124,6 +124,7 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
                 children: [
                   ReceiptRows(type: "Cliente", value: widget.receipt['customer'].toUpperCase()),
                   ReceiptRows(type: "Identificación", value: widget.receipt['customer_id'].toUpperCase()),
+                  ReceiptRows(type: "Razon social", value: widget.receipt['company'].toUpperCase()),
                   ReceiptRows(type: "Compañia", value: widget.receipt['company_id']),
                   ReceiptRows(type: "Fecha", value: widget.receipt['date']),
                   widget.receipt['iva'] != null
@@ -172,8 +173,8 @@ class ReceiptRows extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(type, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(width: 5),
-            Flexible(child: Text(value ?? "No encontrado", softWrap: true, )),
+            const SizedBox(width: 15),
+            Flexible(child: Text(value ?? "No encontrado", softWrap: true, textAlign: TextAlign.end,)),
           ],
         ),
         const SizedBox(height: 7)

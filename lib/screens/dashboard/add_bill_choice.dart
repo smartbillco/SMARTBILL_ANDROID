@@ -5,6 +5,7 @@ import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart
 import 'package:image_picker/image_picker.dart';
 import 'package:smartbill/screens/camera/camera.dart';
 import 'package:smartbill/screens/dashboard/display_image.dart';
+import 'package:smartbill/services/camera.dart';
 import 'package:smartbill/services/pdf_reader.dart';
 import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
 import 'package:smartbill/services/pdf.dart';
@@ -21,6 +22,7 @@ class _AddBillChoiceState extends State<AddBillChoice> {
   final Xmlhandler xmlhandler = Xmlhandler();
   final PdfHandler pdfHandler = PdfHandler();
   final PdfService pdfService = PdfService();
+  final Camera cameraService = Camera();
 
   //Snackbar for receipt cancel
   //Cancelled picking a xml file
@@ -95,13 +97,10 @@ class _AddBillChoiceState extends State<AddBillChoice> {
     final pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
 
     if(pickedImage != null) {
-      final inputImage = InputImage.fromFilePath(pickedImage.path);
-      final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
-      final recognizedText = await textRecognizer.processImage(inputImage);
-
       final image = File(pickedImage.path);
+      final String recognizedText = await cameraService.extractTextFromImage(pickedImage);
 
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: image, recognizedText: recognizedText.text)));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: image, recognizedText: recognizedText)));
 
       
     } else {
@@ -110,8 +109,17 @@ class _AddBillChoiceState extends State<AddBillChoice> {
 
   }
 
-  void _redirectCamera() async {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const CameraShotScreen()));
+  void _takePicture() async {
+
+    final ImagePicker picker = ImagePicker();
+    final pickedImage = await picker.pickImage(source: ImageSource.camera);
+    
+    final String recognizedText = await cameraService.extractTextFromImage(pickedImage);
+    
+    File image = File(pickedImage!.path);
+
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: image, recognizedText: recognizedText)));
+    
   }
 
 
@@ -165,7 +173,7 @@ class _AddBillChoiceState extends State<AddBillChoice> {
               elevation: 4,
               margin: const EdgeInsets.symmetric(vertical: 8),
               child: ListTile(
-                onTap: _redirectCamera,
+                onTap: _takePicture,
                 contentPadding: const EdgeInsets.all(10),
                 leading: const Icon(Icons.camera_alt, color: Colors.teal, size: 28),
                 title: const Text("Tomar foto  de factura"),

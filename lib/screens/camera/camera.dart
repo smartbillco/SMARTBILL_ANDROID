@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:smartbill/screens/dashboard/display_image.dart';
+import 'package:smartbill/services/camera.dart';
 
 class CameraShotScreen extends StatefulWidget {
   const CameraShotScreen({super.key});
@@ -13,6 +15,7 @@ class CameraShotScreen extends StatefulWidget {
 
 class _CameraShotScreenState extends State<CameraShotScreen> {
   late List<CameraDescription> _cameras;
+  Camera cameraService = Camera();
   CameraController? _controller;
   File? _imageFile;
 
@@ -30,17 +33,15 @@ class _CameraShotScreenState extends State<CameraShotScreen> {
   }
 
   Future<void> _takePicture() async {
-    if (_controller == null || !_controller!.value.isInitialized) return;
-    final XFile imageFile = await _controller!.takePicture();
 
-    final inputImage = InputImage.fromFilePath(imageFile.path);
-    final textRecognizer = TextRecognizer(script: TextRecognitionScript.latin);
-    final RecognizedText recognizedText = await textRecognizer.processImage(inputImage);
+    final ImagePicker picker = ImagePicker();
+    final pickedImage = await picker.pickImage(source: ImageSource.camera);
     
-    File image = File(imageFile.path);
+    final String recognizedText = await cameraService.extractTextFromImage(pickedImage);
+    
+    File image = File(pickedImage!.path);
 
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: image, recognizedText: recognizedText.text)));
-
+    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: image, recognizedText: recognizedText)));
     
   }
 

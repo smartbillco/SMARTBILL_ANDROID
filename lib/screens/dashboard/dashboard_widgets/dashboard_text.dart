@@ -9,7 +9,7 @@ class DashboardText extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text("Bienvenido a Smartbill", style: TextStyle(fontSize: 20)),
-          SizedBox(height: 10),
+          SizedBox(height: 12),
         ],
     );
   }

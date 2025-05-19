@@ -78,7 +78,7 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
     RegExp ccRegex = RegExp(r'C\.?C\.?[:\s.\-]*?(\d[\d.]*)', caseSensitive: false);
     //In case nit is not explicit
     RegExp unlabeledNitRegex = RegExp(r'\b\d{9}(-\d)?\b');
-    RegExp moneyRegex = RegExp(r'^\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?$');
+    RegExp moneyRegex = RegExp(r'\b\d{1,3}(?:[\s.,]\s?\d{3})+(?:[\s.,]\s?\d{2})?\b(?!\s*-\d)');
 
     List<String> dates = [];
     List<String> nitValues = [];
@@ -91,6 +91,10 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
       // Check for dates
       for (final match in dateRegex.allMatches(item)) {
         dates.add(match.group(0)!);
+      }
+
+      if(item.toLowerCase().startsWith('nit')) {
+        nitValues.add(item.substring(4,).trim());
       }
 
       // Extract NIT
@@ -125,7 +129,7 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
         String normalized = normalizeMoney(matchText);
         double? value = double.tryParse(normalized);
 
-        if (value != null && value < 10000000) {
+        if (value != null && value < 800000) {
           moneyValues.add(value);
         }
       }
@@ -144,26 +148,28 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
     print('Dates: $dates');
     print('NIT Value: $nitValues');
     print('CC Value: $ccValues');
-    print('Amount: $totalAmount');
+    print('Amount: $moneyValues');
     print("Company name: $companyName");
 
-    if(dates.isEmpty || nitValues.isEmpty) {
-      print("Faltante");
-      setState(() {
-        ocrLines = ["Parece que la información no se pudo extraer bien. Intenta con una foto foto de mejor resolución."];
-
-      });
-    } else {
-        setState(() {
+    setState(() {
         date = dates.isEmpty ? 'No encontrado' : dates.last;
         nit = nitValues.first;
         customer = ccValues.isEmpty ? '22222222222' : ccValues.first;
         total = totalAmount;
         company = companyName;
-        ocrLines = extractedLines;
         
-      });
+    });
 
+    if(nit.isEmpty || nit.length < 8 || total < 1000) {
+      print("Faltante");
+      setState(() {
+        ocrLines = ["Parece que la información no se pudo extraer bien. Intenta con otra factura o con una foto de mejor resolución."];
+
+      });
+    } else {
+      setState(() {
+        ocrLines = extractedLines;
+      });
     }
     
   }
@@ -206,7 +212,7 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
         title: const Text("Imagen"),
       ),
       body: _isLoading
-      ? const CircularProgressIndicator()
+      ? const Center(child: Text("Descargando factura..."))
       : SingleChildScrollView(
         padding: const EdgeInsets.all(30),
         child: ocrLines.isEmpty

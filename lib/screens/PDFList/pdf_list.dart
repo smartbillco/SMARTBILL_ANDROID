@@ -204,9 +204,7 @@ String? extractTotalPrice(List<String> textList) {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Lista de PDFs")),
-      body: Padding(
+    return Padding(
         padding: const EdgeInsets.all(15),
         child: Column(
           children: [
@@ -288,8 +286,8 @@ String? extractTotalPrice(List<String> textList) {
                     subtitle: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(data['company'].trim() ?? ''),
-                        Text(data['date'].trim() ?? ''),
+                        Text(data['company'] ?? ''),
+                        Text(data['date'] ?? ''),
                         Text(currencyFormatter.format(total), style: const TextStyle(fontWeight: FontWeight.w600)),
                       ],
                     ),
@@ -301,8 +299,8 @@ String? extractTotalPrice(List<String> textList) {
           ),
           ]
         ),
-      )
-    );
+      );
+
   }
   
 }
