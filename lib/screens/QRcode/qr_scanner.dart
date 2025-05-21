@@ -32,6 +32,7 @@ class _QRScannerState extends State<QRScanner> {
 
 
   void _startTimer() {
+    
     _timeoutTimer = Timer(const Duration(seconds: 15), () async {
       if(_scanning) {
         scannerController.stop();
@@ -44,8 +45,13 @@ class _QRScannerState extends State<QRScanner> {
 
   bool checkIfIsUri(String? result) {
     Uri? uri = Uri.tryParse(result!);
-    return uri != null && uri.hasScheme && uri.hasAuthority && result.startsWith("https://catalogo-vpfe.dian.gov.co");
-  } 
+    return uri != null && uri.hasScheme && uri.hasAuthority  && result.startsWith("https://catalogo-vpfe.dian.gov.co");
+  }
+
+  bool checkIfQRContainsValidInfo(String? result) {
+    return result!.length > 20;
+
+  }
 
 
   @override
@@ -55,8 +61,6 @@ class _QRScannerState extends State<QRScanner> {
     _startTimer();
     
   }
-
-  @override
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +78,6 @@ class _QRScannerState extends State<QRScanner> {
               scannerController.dispose();
               
             } else {
-              print("Formato QR");
               final qrResult = barcodes.first;
       
               if (qrResult.rawValue != null) {
@@ -87,31 +90,33 @@ class _QRScannerState extends State<QRScanner> {
                   .then((value) => scannerController.dispose())
                   .then((value) {
                     var isUri = checkIfIsUri(qrResult.rawValue);
+                    //Check if qr content is valid information
                     if(qrResult.rawValue!.length > 20) {
-                       if(isUri) {
-                      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => QrcodeLinkScreen(uri: qrResult.rawValue)));
+                      //Check if is url or data
+                      if(isUri) {
+                        if(checkIfQRContainsValidInfo(qrResult.rawValue))  {
+                          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => QrcodeLinkScreen(uri: qrResult.rawValue)));
+                        } else {
+                          _showSnackbarError("El codigo QR no contiene informacion valida");
+                        }
+                        
                       } else {
                         Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => QrcodeScreen(qrResult: qrResult.rawValue!)));
                       }
+                      //If information is not valid show snackbar
                     } else {
                       _showSnackbarError("Parece que el código QR no contiene información relevante.");
                       Navigator.pop(context);
                     }
-                   
                       
                   });
                               
               } else {
-                    _showSnackbarError("ERROR");
-                
+                    _showSnackbarError("ERROR al leer QR");    
               }
               
             }
-      
-            
-            //for(final barcode in barcodes) {
-            //print(barcode.rawValue);
-            //}
+  
           },
           onDetectError:(error, stackTrace) {
             _showSnackbarError(error.toString());
