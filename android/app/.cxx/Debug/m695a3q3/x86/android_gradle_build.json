@@ -1,0 +1,28 @@
+{
+  "buildFiles": [
+    "/Users/mac2019/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/mac2019/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/Users/mac2019/Desktop/smartbill_flutter/android/app/.cxx/Debug/m695a3q3/x86",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/mac2019/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/Users/mac2019/Desktop/smartbill_flutter/android/app/.cxx/Debug/m695a3q3/x86",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {},
+  "toolchains": {
+    "toolchain": {
+      "cCompilerExecutable": "/Users/mac2019/Library/Android/sdk/ndk/29.0.13113456/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang.lld",
+      "cppCompilerExecutable": "/Users/mac2019/Library/Android/sdk/ndk/29.0.13113456/toolchains/llvm/prebuilt/darwin-x86_64/bin/clang++.lld"
+    }
+  },
+  "cFileExtensions": [],
+  "cppFileExtensions": []
+}

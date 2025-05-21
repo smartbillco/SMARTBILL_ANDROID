@@ -14,7 +14,6 @@ class ExpensePieChart extends StatefulWidget {
 class _ExpensePieChartState extends State<ExpensePieChart> {
   DatabaseConnection databaseConnection = DatabaseConnection();
   User? user = FirebaseAuth.instance.currentUser;
-  bool _isLoading = false;
   List<Map<String, dynamic>> summary = [];
   final categoryColors = {
       'Alimentación': Colors.blue,
@@ -33,10 +32,6 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
   }
 
   Future<void> getData() async {
-
-    setState(() {
-      _isLoading = true;
-    });
 
     List<Map<String, dynamic>> summaryList = [];
     var db = await databaseConnection.openDb();
@@ -64,7 +59,6 @@ class _ExpensePieChartState extends State<ExpensePieChart> {
 
     setState(() {
       summary = summaryList;
-      _isLoading: false;
     });
 
   }

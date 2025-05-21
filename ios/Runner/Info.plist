@@ -13,6 +13,15 @@
 	<array>
 		<string>fetch</string>
 		<string>processing</string>
+		<string>remote-notification</string>
+	</array>
+	<key>BGTaskSchedulerPermittedIdentifiers</key>
+	<array>
+		<string>com.smartbill.mobile.refresh</string>
+	</array>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+	<string>pdf</string>
 	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
@@ -31,7 +40,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>$(FLUTTER_BUILD_NAME)</string>
+	<string>1.0.18</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleURLTypes</key>
@@ -50,13 +59,13 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>Necesitamos acceso a la cámara para capturar fotos</string>
+	<string>Necesitamos acceso a la cámara para capturar fotos de tus facturas</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Necesitamos acceso a tu microfono</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Necesitamos permiso para acceder a tus archivos.</string>
+	<string>Necesitamos permiso para acceder a tus facturas.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
-	<string>Necesitamos permiso para acceder a tus archivos.</string>
+	<string>Necesitamos permiso para acceder a tus facturas.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

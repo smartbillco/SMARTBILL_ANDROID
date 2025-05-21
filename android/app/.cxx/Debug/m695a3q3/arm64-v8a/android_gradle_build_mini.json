@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/Users/mac2019/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/mac2019/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/Users/mac2019/Desktop/smartbill_flutter/android/app/.cxx/Debug/m695a3q3/arm64-v8a",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/mac2019/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/Users/mac2019/Desktop/smartbill_flutter/android/app/.cxx/Debug/m695a3q3/arm64-v8a",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}

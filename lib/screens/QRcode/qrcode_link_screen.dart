@@ -1,11 +1,9 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:smartbill/screens/PDFList/pdf_list.dart';
-import 'package:smartbill/screens/QRcode/confirmDownload/confirm_download.dart';
+import 'package:smartbill/screens/dashboard/dashboard.dart';
 
 class QrcodeLinkScreen extends StatefulWidget {
   final String? uri; 
@@ -32,7 +30,50 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
     super.initState();
 
   }
-  bool checkIfUrlIsDian(String url) {
+
+  void showSnackbar(String content) {
+    final snackbar = SnackBar(content: Text(content));
+
+    ScaffoldMessenger.of(context).showSnackBar(snackbar);
+  }
+
+  Future<void> _startDownload(String url) async {
+
+    final dir = Platform.isAndroid ?  await getExternalStorageDirectory() : await getApplicationDocumentsDirectory();
+
+    final pathDir = Directory("${dir!.path}/invoices");
+
+    if(!await pathDir.exists()) {
+      await Directory("${dir.path}/invoices").create(recursive: true);
+    }
+
+    try {
+        await FlutterDownloader.enqueue(
+          url: url,
+          savedDir: pathDir.path,
+          fileName: 'Invoice_${DateTime.now().millisecondsSinceEpoch}.pdf',
+          showNotification: true,
+          openFileFromNotification: true,
+        );
+
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Descargando factura...")));
+
+        await Future.delayed(Duration(seconds: 5), () async {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Factura descargada en PDFs DIAN")));
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const DashboardScreen()));
+        });
+
+    } catch(e) {
+
+      print("Error: $e");
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hubo un problema con la descarga: $e")));
+
+    }
+
+  }
+
+   bool checkIfUrlIsDian(String url) {
     return url.startsWith("https://catalogo-vpfe.dian.gov.co");
   }
 
@@ -52,52 +93,6 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
     } 
   } 
 
-  void showSnackbar(String content) {
-    final snackbar = SnackBar(content: Text(content));
-
-    ScaffoldMessenger.of(context).showSnackBar(snackbar);
-  }
-
-  Future<void> downloadElectronicBill(String downloadUrl) async {
-    setState(() {
-      isLoading = true;
-    });
-                
-    final dir = await getExternalStorageDirectory(); // Returns app's external storage
-    final path = "${dir!.path}/invoices";
-    await Directory(path).create(recursive: true);
-
-    String fileName = "invoice_${DateTime.now().millisecondsSinceEpoch}.pdf";
-
-    try {
-      await FlutterDownloader.enqueue(
-        url: downloadUrl,
-        savedDir: path,
-        fileName: fileName,
-        showNotification: true,
-        openFileFromNotification: true,
-       );
-
-      showSnackbar("Se esta descargando la factura");
-
-      await Future.delayed(const Duration(seconds: 6), () {
-        setState(() {
-          isLoading = false;
-        });
-
-        showSnackbar("Se ha descargado la factura");
-        Navigator.pop(context);
-            
-        });
-
-      } catch (e) {
-
-      showSnackbar("Ha ocurrido un problema con el PDF");
-    } finally {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const PDFListScreen()));
-    }
-  }
-
 
 
   @override
@@ -109,45 +104,39 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 35),
-        child: isLoading
-        ? const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [CircularProgressIndicator(), SizedBox(height: 10,), Text("Descargando archivo...")]))
-        : InAppWebView(
-          initialSettings: InAppWebViewSettings(
-            javaScriptEnabled: true,
-            useOnDownloadStart: true,
-            allowFileAccess: true,
-            allowContentAccess: true,
-            useHybridComposition: true,
+        child: InAppWebView(
+            initialUrlRequest: URLRequest(
+              url: WebUri(widget.uri!),
+            ),
+            initialSettings: InAppWebViewSettings(
+              javaScriptEnabled: true,
+              useOnDownloadStart: true,
+              allowFileAccess: true,
+              allowContentAccess: true,
+              useHybridComposition: true,
+            ),
+            onWebViewCreated: (controller) {
+              webViewController = controller;
+              print("WebView Created");
+            },
+            onLoadStop: (controller, url) async {
+              if(!hasCheckedUrl && url != null) {
+                hasCheckedUrl = true;
+                validateIfQRContainsCufe(Uri.parse(url.toString()));
+              }
+              print("Loaded: $url");
+            },
+            onUpdateVisitedHistory: (controller, url, androidIsReload) async {
+              final link = url.toString();
+              print("Link message: $url");
+              if (Platform.isIOS && link.contains("https://catalogo-vpfe.dian.gov.co/Document/DownloadPDF?trackId")) {
+                await _startDownload(link);
+              }
+            },
+            onReceivedHttpError: (controller, request, errorResponse) {
+              
+            },
           ),
-          initialUrlRequest: URLRequest(url: WebUri(widget.uri!)),
-          onWebViewCreated: (controller) {
-            webViewController = controller;
-          },
-          onLoadStart: (controller, url) {
-            if(!hasCheckedUrl && url != null) {
-              hasCheckedUrl = true;
-              validateIfQRContainsCufe(Uri.parse(url.toString()));
-            }
-            if(url.toString().contains('ShowDocument')) {
-              cloudflarePassed = true;
-              print("URL: ${url.toString()}");
-            } else {
-              cloudflarePassed = false;
-            }
-            originalUrl ??= url.toString();
-            
-          },
-          onUpdateVisitedHistory: (controller, url, isReload) {
-            if(originalUrl != null && originalUrl != url.toString() && !hasNavigated && cloudflarePassed) {
-              hasNavigated = true;
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ConfirmDownloadScreen(url: url.toString())));
-            }
-          },
-          onDownloadStartRequest: (controller, request) {
-            print("Download: ${request.url.toString()}");
-            
-          },
-        ),
       ),
     );
   }
