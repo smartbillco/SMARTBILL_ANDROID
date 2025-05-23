@@ -67,7 +67,7 @@ class _BalanceGraphState extends State<BalanceGraph> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 20),
       child: AspectRatio(
-        aspectRatio: 1.7,
+        aspectRatio: 1.8,
         child: BarChart(
           BarChartData(
             barGroups: [

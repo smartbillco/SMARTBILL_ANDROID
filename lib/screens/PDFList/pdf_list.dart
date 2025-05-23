@@ -106,7 +106,7 @@ String? extractTotalPrice(List<String> textList) {
 
 
  Future<void> loadPdfs() async {
-    Directory? appDir = await getExternalStorageDirectory();
+    Directory? appDir = Platform.isAndroid ?  await getExternalStorageDirectory() : await getApplicationDocumentsDirectory();
 
     if (appDir == null) {
       print("Error: External storage directory is null.");

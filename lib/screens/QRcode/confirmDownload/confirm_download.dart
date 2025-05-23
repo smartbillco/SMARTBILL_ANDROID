@@ -92,10 +92,14 @@ class _ConfirmDownloadScreenState extends State<ConfirmDownloadScreen> {
       isLoading = true;
     });
     
-    final dir = await getExternalStorageDirectory(); // Returns app's external storage
+    final dir = Platform.isAndroid ?  await getExternalStorageDirectory() : await getApplicationDocumentsDirectory(); // Returns app's external storage
     final path = "${dir!.path}/invoices";
-    await Directory(path).create(recursive: true);
-
+    final dirPath = Directory(path);
+    
+    if(!await dirPath.exists()) {
+      await Directory(path).create(recursive: true);
+    }
+    
     String fileName = "invoice_${DateTime.now().millisecondsSinceEpoch}.pdf";
 
     try {

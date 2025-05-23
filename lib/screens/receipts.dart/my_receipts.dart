@@ -32,7 +32,7 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
   final XmlPeru xmlPeru = XmlPeru();
   final XmlPanama xmlPanama = XmlPanama();
   final Xmlhandler xmlhandler = Xmlhandler();
-  final PdfService _pdfService = PdfService();
+  final PdfService pdfService = PdfService();
 
   //Handling sums
   double totalColombia = 0;
@@ -45,7 +45,7 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
   void getReceipts() async {
     var ocrReceipts = await ocrService.fetchOcrReceipts();
     var xmlFiles = await xmlhandler.getXmls();
-    var pdfFiles = await _pdfService.fetchAllPdfs();
+    var pdfFiles = await pdfService.fetchAllPdfs();
     List myFiles = [];
     double totalPaidColombia = 0;
     double totalPaidPeru = 0;
@@ -75,7 +75,6 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
 
         final Map newPanamanianXml = xmlPanama.parsedPanamaXml(item['_id'], xmlDocument);
 
-        print("Price: ${newPanamanianXml['price']}");
 
         totalPaidPanama += double.parse(newPanamanianXml['price']);
 

@@ -53,7 +53,6 @@ class _QRScannerState extends State<QRScanner> {
 
   }
 
-
   @override
   void initState() {
     // TODO: implement initState

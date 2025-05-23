@@ -9,7 +9,6 @@ class Trm {
 
   Trm(this.uri);
 
-
   Future<Map<String, dynamic>> getExchangeCurrency() async {
     final url = Uri.parse(uri);
 

@@ -80,7 +80,7 @@ class _AddBillChoiceState extends State<AddBillChoice> {
         
         print("ERROR saving pdf: $e");
 
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("La factura ya existe, o hubo un error cargandola. Intente con otra factura.")));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("La factura ya existe, o hubo un error cargandola. Intente con otra factura.")));
 
         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const ReceiptScreen()));
       }
@@ -100,7 +100,13 @@ class _AddBillChoiceState extends State<AddBillChoice> {
       final image = File(pickedImage.path);
       final String recognizedText = await cameraService.extractTextFromImage(pickedImage);
 
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: image, recognizedText: recognizedText)));
+      if(recognizedText == 'error') {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Parece que la imagen no contiene información completa o no es una factura")));
+        Navigator.pop(context);
+      } else {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: image, recognizedText: recognizedText)));
+
+      }
 
       
     } else {
@@ -118,7 +124,13 @@ class _AddBillChoiceState extends State<AddBillChoice> {
     
     File image = File(pickedImage!.path);
 
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: image, recognizedText: recognizedText)));
+    if(recognizedText == 'error') {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Parece que la imagen no contiene información completa o no es una factura")));
+      Navigator.pop(context);
+    } else {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: image, recognizedText: recognizedText)));
+
+    }
     
   }
 
