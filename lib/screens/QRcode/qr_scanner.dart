@@ -72,49 +72,54 @@ class _QRScannerState extends State<QRScanner> {
           onDetect: (BarcodeCapture capture) async {
             final List<Barcode> barcodes = capture.barcodes;
 
-            if(barcodes.first.format != BarcodeFormat.qrCode) {
-              _showSnackbarError("El código detectado no es QR. Verifique que el código es válido o no hay un código de barras en la factura.");
-              Navigator.pop(context);
-              scannerController.dispose();
-              
-            } else {
-              final qrResult = barcodes.first;
-      
-              if (qrResult.rawValue != null) {
-
-                _timeoutTimer?.cancel(); // Stop timeout if QR is scanned
-                _scanning = false;
-                //To do with code
-                await scannerController
-                  .stop()
-                  .then((value) => scannerController.dispose())
-                  .then((value) {
-                    var isUri = checkIfIsUri(qrResult.rawValue);
-                    //Check if qr content is valid information
-                    if(qrResult.rawValue!.length > 20) {
-                      //Check if is url or data
-                      if(isUri) {
-                        if(checkIfQRContainsValidInfo(qrResult.rawValue))  {
-                          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => QrcodeLinkScreen(uri: qrResult.rawValue)));
-                        } else {
-                          _showSnackbarError("El codigo QR no contiene informacion valida");
-                        }
-                        
-                      } else {
-                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => QrcodeScreen(qrResult: qrResult.rawValue!)));
-                      }
-                      //If information is not valid show snackbar
-                    } else {
-                      _showSnackbarError("Parece que el código QR no contiene información relevante.");
-                      Navigator.pop(context);
-                    }
-                      
-                  });
-                              
+            try {
+              if(barcodes.first.format != BarcodeFormat.qrCode) {
+                _showSnackbarError("El código detectado no es QR. Verifique que el código es válido o no hay un código de barras en la factura.");
+                Navigator.pop(context);
+                scannerController.dispose();
+                
               } else {
-                    _showSnackbarError("ERROR al leer QR");    
+                final qrResult = barcodes.first;
+        
+                if (qrResult.rawValue != null) {
+
+                  _timeoutTimer?.cancel(); // Stop timeout if QR is scanned
+                  _scanning = false;
+                  //To do with code
+                  await scannerController
+                    .stop()
+                    .then((value) => scannerController.dispose())
+                    .then((value) {
+                      var isUri = checkIfIsUri(qrResult.rawValue);
+                      //Check if qr content is valid information
+                      if(qrResult.rawValue!.length > 20) {
+                        //Check if is url or data
+                        if(isUri) {
+                          if(checkIfQRContainsValidInfo(qrResult.rawValue))  {
+                            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => QrcodeLinkScreen(uri: qrResult.rawValue)));
+                          } else {
+                            _showSnackbarError("El codigo QR no contiene informacion valida");
+                          }
+                          
+                        } else {
+                          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => QrcodeScreen(qrResult: qrResult.rawValue!)));
+                        }
+                        //If information is not valid show snackbar
+                      } else {
+                        _showSnackbarError("Parece que el código QR no contiene información relevante.");
+                        Navigator.pop(context);
+                      }
+                        
+                    });
+                                
+                } else {
+                      _showSnackbarError("ERROR al leer QR");    
+                }
+                
               }
-              
+
+            } catch(e) {
+              _showSnackbarError("Parece que el código QR no es valido. Intente on otro codigo.");
             }
   
           },

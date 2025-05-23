@@ -18,7 +18,10 @@ class _ReportCardState extends State<ReportCard> {
   int xml = 0;
   int pdf = 0;
   int ocr = 0;
-  int billAmount = 0;
+
+  double xmlTotal = 0;
+  double pdfTotal = 0;
+  double ocrTotal = 0;
 
   Future<void> getAllBillAmounts() async {
     int xmlAmount = await getNumberOfBills(xmlhandler.getXmls, 'xml');
@@ -53,9 +56,10 @@ class _ReportCardState extends State<ReportCard> {
     return Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _StatCard(label: 'XML', value: xml.toString()),
-                _StatCard(label: 'PDF', value: pdf.toString()),
-                _StatCard(label: 'Imagen', value: ocr.toString()),
+                _StatCard(label: 'XML', amount: "20000", value: xml.toString()),
+                _StatCard(label: 'PDF', amount: "30000", value: pdf.toString()),
+                _StatCard(label: 'Imagen', amount: "20000", value: ocr.toString()),
+                _StatCard(label: 'DIAN', amount: "20000", value: ocr.toString()),
               ],
             );
   }
@@ -63,11 +67,13 @@ class _ReportCardState extends State<ReportCard> {
 
 class _StatCard extends StatelessWidget {
   final String label;
+  final String amount;
   final String value;
 
   const _StatCard({
     required this.label,
     required this.value,
+    required this.amount
   });
 
   @override
@@ -76,12 +82,13 @@ class _StatCard extends StatelessWidget {
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.26,
-        padding: const EdgeInsets.all(12),
+        width: MediaQuery.of(context).size.width * 0.21,
+        padding: const EdgeInsets.all(8),
         child: Column(
+          spacing: 2,
           children: [
-            Text(value, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
-            const SizedBox(height: 4),
+            Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+            Text(amount, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
             Text(label, style: const TextStyle(fontSize: 14, color: Colors.black38)),
           ],
         ),

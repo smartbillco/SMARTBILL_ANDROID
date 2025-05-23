@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:smartbill/screens/reports/reportBalance/report_balance_graph.dart';
 import 'package:smartbill/screens/reports/reportCards/report_card.dart';
 import 'package:smartbill/screens/reports/reportExpenses/report_expense_graph.dart';
+import 'package:smartbill/screens/reports/reportTotal/report_total_cards.dart';
 import 'package:smartbill/services/colombian_bill.dart';
 import 'package:smartbill/services/db.dart';
 import 'package:smartbill/services/peruvian_bill.dart';
@@ -79,9 +80,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
       ),
       body: const SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 40.0, horizontal: 18),
+          padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 14),
           child: Column(
-            spacing: 6,
+            spacing: 4,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
@@ -89,7 +90,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
                 style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
               ),
               ReportCard(),
-              SizedBox(height: 15),
+              SizedBox(height: 12),
               Text('Balance', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               SizedBox(height: 20),
               BalanceGraph(),
