@@ -3,6 +3,8 @@ import 'dart:typed_data';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:smartbill/models/ocr_receipts.dart';
 import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
 
@@ -19,6 +21,8 @@ class DisplayImageScreen extends StatefulWidget {
 
 class _DisplayImageScreenState extends State<DisplayImageScreen> {
   final String userId = FirebaseAuth.instance.currentUser!.uid;
+  TextEditingController _textController = TextEditingController();
+  
 
   List<String> ocrLines = [];
   String nit = '';
@@ -26,7 +30,7 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
   String customer = '';
   String company = '';
   double total = 0;
-  bool _isLoading = false;
+  bool isTotalCorrect = true;
 
   @override
   void initState() {
@@ -145,6 +149,7 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
           customer = ccValues.isEmpty ? '22222222222' : ccValues.first;
           total = totalAmount;
           company = companyName;
+  
 
           if (nit.isEmpty || nit.length < 8 || total < 1000) {
             // Safe to show UI feedback now
@@ -164,7 +169,7 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
         // Safe to show UI feedback now
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Parece que el contenido está incompleto o no es una factura válida.')),
+            const SnackBar(content: Text('Parece que el contenido está incompleto o no es una factura válida.')),
           );
           Navigator.pop(context);
         }
@@ -173,10 +178,6 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
   }
 
   Future<void> _saveNewOcrReceipt() async {
-
-    setState(() {
-      _isLoading = true;
-    });
 
     final Uint8List convertedImage = await widget.image!.readAsBytes();
     print(convertedImage);
@@ -189,18 +190,14 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
       } else {
         print("Success! $result");
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Factura descargada")));
-        Future.delayed(Duration(seconds: 3), () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ReceiptScreen())));
+        Future.delayed(const Duration(seconds: 3), () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ReceiptScreen())));
         
       }
       
     } catch(e) {
       print("Error saving ocr: $e");
 
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
+    } 
   }
 
 
@@ -210,25 +207,81 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
       appBar: AppBar(
         title: const Text("Imagen"),
       ),
-      body: _isLoading
-      ? const Center(child: Text("Descargando factura..."))
-      : SingleChildScrollView(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(30),
-        child: ocrLines.isEmpty
-        ? const Center(child: CircularProgressIndicator())
-        : Column(
+        child: Column(
+          spacing: 8,
             children: [
-              TextButton(onPressed: _saveNewOcrReceipt,
-                style: const ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.green)),
-                child: const Text("Guardar factura", style: TextStyle(color: Colors.white),),
-                ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
               widget.image != null ? Image.file(widget.image!, width: 320,) : const Center(child: Text("La imagen no se pudo cargar")),
-              const SizedBox(height: 20),
-              for (var line in ocrLines) Text(line),
+              const SizedBox(height: 10),
+              receiptRow("Empresa", company),
+              receiptRow("Id de Empresa", nit),
+              receiptRow("Fecha", date),
+
+              //Change total if incorrect
+              isTotalCorrect
+              ? receiptRow("Total", total)
+              : Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text("Total: "),
+                  SizedBox(
+                    width: 100,
+                    child: TextField(
+                      controller: _textController,
+                      keyboardType: TextInputType.number,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(RegExp(r'^\d*\.?\d*')),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          total = double.parse(value);
+                        });
+                      },
+                    ),
+                  )
+                ],
+              ),
+
+              //If extraction was not success
+              ocrLines.isEmpty
+              ? const Text("El texto no pudo ser extraido")
+              : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                spacing: 12,
+                children: [
+                  TextButton(onPressed: _saveNewOcrReceipt,
+                    style: const ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.green)),
+                    child: const Text("Guardar factura", style: TextStyle(color: Colors.white),),
+                  ),
+                  TextButton(onPressed: () {
+                    setState(() {
+                      isTotalCorrect = !isTotalCorrect;
+                    });
+                  }, child: isTotalCorrect ? Text("Cambiar Total") : Text("Establecer") )
+                ],
+              )
             ],
         ),
       ),
     );
   }
+}
+
+Row receiptRow(String type, dynamic value) {
+
+  final currencyFormatter = NumberFormat('#,##0.00', 'en_US');
+
+  if(value is double) {
+    value = currencyFormatter.format(value);
+  }
+
+  return Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      Text("$type: ", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+      Text(value.toString(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400))
+    ],
+  );
 }

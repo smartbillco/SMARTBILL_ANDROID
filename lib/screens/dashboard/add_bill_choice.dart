@@ -1,9 +1,7 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:smartbill/screens/camera/camera.dart';
 import 'package:smartbill/screens/dashboard/display_image.dart';
 import 'package:smartbill/services/camera.dart';
 import 'package:smartbill/services/pdf_reader.dart';
