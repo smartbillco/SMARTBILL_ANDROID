@@ -30,7 +30,6 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
 
   @override
   void initState() {
-  
     super.initState();
     _extractData();
   }
@@ -71,107 +70,106 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
 
 
   void _extractData() {
-    List<String> extractedLines = widget.recognizedText!.split('\n');
 
-    RegExp dateRegex = RegExp(r'\b(\d{2}[/-]\d{2}[/-]\d{2,4}|\d{4}[/-]\d{2}[/-]\d{2})\b');
-    RegExp nitRegex = RegExp(r'NIT[:\s.\-]*?([\d.]+-\d+|\d+)', caseSensitive: false);
-    RegExp ccRegex = RegExp(r'C\.?C\.?[:\s.\-]*?(\d[\d.]*)', caseSensitive: false);
-    //In case nit is not explicit
-    RegExp unlabeledNitRegex = RegExp(r'\b\d{9}(-\d)?\b');
-    RegExp moneyRegex = RegExp(r'\b\d{1,3}(?:[\s.,]\s?\d{3})+(?:[\s.,]\s?\d{2})?\b(?!\s*-\d)');
+   WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        List<String> extractedLines = widget.recognizedText!.split('\n');
 
-    List<String> dates = [];
-    List<String> nitValues = [];
-    List<String> ccValues = [];
-    List<double> moneyValues = [];
-    String companyName = '';
+        RegExp dateRegex = RegExp(r'\b(\d{2}[/-]\d{2}[/-]\d{2,4}|\d{4}[/-]\d{2}[/-]\d{2})\b');
+        RegExp nitRegex = RegExp(r'NIT[:\s.\-]*?([\d.]+-\d+|\d+)', caseSensitive: false);
+        RegExp ccRegex = RegExp(r'C\.?C\.?[:\s.\-]*?(\d[\d.]*)', caseSensitive: false);
+        RegExp unlabeledNitRegex = RegExp(r'\b\d{9}(-\d)?\b');
+        RegExp moneyRegex = RegExp(r'\b\d{1,3}(?:[\s.,]\s?\d{3})+(?:[\s.,]\s?\d{2})?\b(?!\s*-\d)');
 
-    for (var item in extractedLines) {
+        List<String> dates = [];
+        List<String> nitValues = [];
+        List<String> ccValues = [];
+        List<double> moneyValues = [];
+        String companyName = '';
 
-      // Check for dates
-      for (final match in dateRegex.allMatches(item)) {
-        dates.add(match.group(0)!);
-      }
+        for (var item in extractedLines) {
+          for (final match in dateRegex.allMatches(item)) {
+            dates.add(match.group(0)!);
+          }
 
-      if(item.toLowerCase().startsWith('nit')) {
-        nitValues.add(item.substring(4,).trim());
-      }
+          if (item.toLowerCase().startsWith('nit')) {
+            nitValues.add(item.substring(4).trim());
+          }
 
-      // Extract NIT
-      final nitMatch = nitRegex.firstMatch(item);
-      if (nitMatch != null) {
-        String rawNit = nitMatch.group(1)!;
-        String cleanedNit = rawNit.replaceAll('.', '');
-        nitValues.add(cleanedNit);
-      }
+          final nitMatch = nitRegex.firstMatch(item);
+          if (nitMatch != null) {
+            String rawNit = nitMatch.group(1)!;
+            String cleanedNit = rawNit.replaceAll('.', '');
+            nitValues.add(cleanedNit);
+          }
 
-      // Extract unlabeled NITs (if not already captured)
-      final unlabeledMatches = unlabeledNitRegex.allMatches(item);
-      for (final match in unlabeledMatches) {
-        String candidate = match.group(0)!;
-        if (!nitValues.contains(candidate)) {
-          nitValues.add(candidate);
+          final unlabeledMatches = unlabeledNitRegex.allMatches(item);
+          for (final match in unlabeledMatches) {
+            String candidate = match.group(0)!;
+            if (!nitValues.contains(candidate)) {
+              nitValues.add(candidate);
+            }
+          }
+
+          final ccMatch = ccRegex.firstMatch(item);
+          if (ccMatch != null) {
+            String rawCc = ccMatch.group(1)!;
+            String cleanedCc = rawCc.replaceAll('.', '');
+            ccValues.add(cleanedCc);
+          }
+
+          for (final match in moneyRegex.allMatches(item)) {
+            String matchText = match.group(0)!;
+            String normalized = normalizeMoney(matchText);
+            double? value = double.tryParse(normalized);
+
+            if (value != null && value < 800000) {
+              moneyValues.add(value);
+            }
+          }
+        }
+
+        if (extractedLines[0] != '') {
+          companyName = extractedLines[0];
+        } else {
+          companyName = extractedLines[1];
+        }
+
+        double totalAmount = moneyValues.isNotEmpty
+            ? moneyValues.reduce((a, b) => a > b ? a : b)
+            : 0;
+
+        setState(() {
+          date = dates.isEmpty ? 'No encontrado' : dates.last;
+          nit = nitValues.firstOrNull ?? '';
+          customer = ccValues.isEmpty ? '22222222222' : ccValues.first;
+          total = totalAmount;
+          company = companyName;
+
+          if (nit.isEmpty || nit.length < 8 || total < 1000) {
+            // Safe to show UI feedback now
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Parece que el contenido está incompleto o no es una factura válida.')),
+              );
+              Navigator.pop(context);
+            }
+             
+          } else {
+            ocrLines = extractedLines;
+          }
+        });
+
+      } catch (e) {
+        // Safe to show UI feedback now
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Parece que el contenido está incompleto o no es una factura válida.')),
+          );
+          Navigator.pop(context);
         }
       }
-
-      // Extract CC
-      final ccMatch = ccRegex.firstMatch(item);
-      if (ccMatch != null) {
-        String rawCc = ccMatch.group(1)!;
-        String cleanedCc = rawCc.replaceAll('.', '');
-        ccValues.add(cleanedCc);
-      }
-
-
-      // Check for money values
-      for (final match in moneyRegex.allMatches(item)) {
-        String matchText = match.group(0)!;
-        String normalized = normalizeMoney(matchText);
-        double? value = double.tryParse(normalized);
-
-        if (value != null && value < 800000) {
-          moneyValues.add(value);
-        }
-      }
-    }
-
-    //Pick first line as company name
-    if(extractedLines[0] != '') {
-      companyName = extractedLines[0];
-    } else {
-      companyName = extractedLines[1];
-    }
-    
-
-    double totalAmount = moneyValues.isNotEmpty ? moneyValues.reduce((a, b) => a > b ? a : b) : 0;
-
-    print('Dates: $dates');
-    print('NIT Value: $nitValues');
-    print('CC Value: $ccValues');
-    print('Amount: $moneyValues');
-    print("Company name: $companyName");
-
-    setState(() {
-        date = dates.isEmpty ? 'No encontrado' : dates.last;
-        nit = nitValues.first;
-        customer = ccValues.isEmpty ? '22222222222' : ccValues.first;
-        total = totalAmount;
-        company = companyName;
-        
     });
-
-    if(nit.isEmpty || nit.length < 8 || total < 1000) {
-      print("Faltante");
-      setState(() {
-        ocrLines = ["Parece que la información no se pudo extraer bien. Intenta con otra factura o con una foto de mejor resolución."];
-
-      });
-    } else {
-      setState(() {
-        ocrLines = extractedLines;
-      });
-    }
-    
   }
 
   Future<void> _saveNewOcrReceipt() async {
@@ -182,9 +180,9 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
 
     final Uint8List convertedImage = await widget.image!.readAsBytes();
     print(convertedImage);
-    final OcrReceipts ocrReceipts = OcrReceipts(userId: userId, image: convertedImage, extractedText: widget.recognizedText!, date: date, company: company, nit: nit, userDocument: customer, amount: total);
    
     try {
+      final OcrReceipts ocrReceipts = OcrReceipts(userId: userId, image: convertedImage, extractedText: widget.recognizedText!, date: date, company: company, nit: nit, userDocument: customer, amount: total);
       String result = await ocrReceipts.saveOcrReceipt();
       if(result.startsWith("Hubo un error")) {
         print(result);
@@ -197,7 +195,8 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
       
     } catch(e) {
       print("Error saving ocr: $e");
-    }finally {
+
+    } finally {
       setState(() {
         _isLoading = false;
       });
