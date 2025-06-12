@@ -1,11 +1,9 @@
-import 'dart:typed_data';
-
 import 'package:smartbill/services/db.dart';
 import 'package:sqflite/sqflite.dart';
 
 class OcrReceipts {
   final String userId;
-  final Uint8List image;
+  final String image;
   final String extractedText;
   final String date;
   final String company;

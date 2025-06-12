@@ -1,5 +1,3 @@
-import 'dart:typed_data';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:smartbill/services/db.dart';
 
@@ -53,13 +51,13 @@ class OcrReceiptsService {
     print("Delete receipt");
   }
 
-  Future<Uint8List> fetchImage(int id) async {
+  Future<String> fetchImage(int id) async {
     final db = await DatabaseConnection().openDb();
     final result = await db.rawQuery(
       'SELECT image FROM ocr_receipts WHERE _id = ?',
       [id],
     );
-    return result.first['image'] as Uint8List;
+    return result.first['image'] as String; 
     }
 
 }

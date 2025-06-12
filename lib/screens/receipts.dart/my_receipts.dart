@@ -39,6 +39,19 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
   double totalPeru = 0;
   double totalPanama = 0;
   List<dynamic> _fileContent = [];
+  List<String> companies = ['Todas las empresas'];
+  String? selectedValue;
+  List<dynamic> filteredReceipts = [];
+
+
+  //Initstate
+  @override
+  void initState() {
+    super.initState();
+    getReceipts();
+    fetchAllCompanies();
+  }
+
 
 
   //Get all XML files from sqlite
@@ -140,6 +153,7 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
     if (mounted) {
       setState(() {
         _fileContent = myFiles;
+        filteredReceipts = myFiles;
         totalColombia = totalPaidColombia;
         totalPeru = totalPaidPeru;
         totalPanama = totalPaidPanama;
@@ -148,29 +162,85 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
   }
 
 
-  @override
-  void initState() {
-    super.initState();
-    getReceipts();
+  //Get all the companies
+  Future<void> fetchAllCompanies() async {
+
+    Future.delayed(Duration(milliseconds: 1000), () {
+      List<String> myCompanies = [];
+      _fileContent.forEach((bill) {
+        myCompanies.add(bill['company']);
+      });
+
+      setState(() {
+        companies.addAll(myCompanies);
+      });
+
+      print("Companies: $companies");
+    });
+
   }
 
+  void filterReceipts(String value) {
+    
+      if(value == 'Todas las empresas') {
+        filteredReceipts = _fileContent;
+      } else {
+        filteredReceipts = _fileContent
+        .where((bill) => bill['company'].contains(value))
+        .toList();
+      }
 
+      double totalPrice = filteredReceipts.fold(0.0, (sum, bill) {
+        return sum + double.tryParse(bill['price'] ?? '0')!;
+      });
+
+      setState(() {
+        totalColombia = totalPrice;
+        totalPanama = totalPrice;
+        totalPeru = totalPrice;
+      });
+
+      
+    }
+      
+
+  //Receipts screens
   @override
   Widget build(BuildContext context) {
     return Padding(
-        padding: const EdgeInsets.fromLTRB(15, 20, 15, 42),
+        padding: const EdgeInsets.fromLTRB(12, 20, 12, 42),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TotalSumWidget(totalColombia: totalColombia, totalPeru: totalPeru, totalPanama: totalPanama),
-            const SizedBox(height: 25),
-            const SearchbarWidget(),
-            const SizedBox(height: 15),
+            const SizedBox(height: 18),
+            
+            companies.isEmpty
+            ? Text("No hay compañias todavia...", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),)
+            : DropdownButton<String>(
+              value: selectedValue,
+              hint: const Text('Buscar por compañia'),
+              isExpanded: true,
+              items: companies.map((value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+              onChanged: (value) {
+                filterReceipts(value!);
+                setState(() {
+                  selectedValue = value;
+                });
+              },
+            ),
+
+            const SizedBox(height: 14),
             Expanded(
               child: _fileContent.isNotEmpty
                   ? ListView.builder(
                     padding: const EdgeInsets.all(7),
-                      itemCount: _fileContent.length,
+                      itemCount: filteredReceipts.length,
                       itemBuilder: (context, index) {
                         return Padding(
                           padding: const EdgeInsets.symmetric(
@@ -180,17 +250,19 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
                                 const BorderRadius.all(Radius.circular(10)),
                             elevation: 12,
                             shadowColor: const Color.fromARGB(255, 185, 185, 185),
-                            child: ListReceipts(fileContent: _fileContent, index: index, getReceipts: getReceipts,)
+                            child: ListReceipts(fileContent: filteredReceipts, index: index, getReceipts: getReceipts,)
                           ),
                         );
                       },
                     )
-                  : const Text("No hay archivos todavia"),
+                  : const Text("No hay archivos todavia...", style:TextStyle(fontSize: 18, fontWeight: FontWeight.w400)),
             ),
         ]),
       );
   }
 }
+
+
 
 //Tiles for the receipts
 class ListReceipts extends StatefulWidget {

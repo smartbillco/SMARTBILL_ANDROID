@@ -9,7 +9,7 @@ import 'package:path/path.dart';
     var databasesPath = await getDatabasesPath();
     var path = join(databasesPath, 'smartbill.db');
 
-    return db = await openDatabase(path, version: 7,
+    return db = await openDatabase(path, version: 8,
       onCreate: (Database db, int version) async {
         // Version 1
         await db.execute('''
@@ -209,6 +209,23 @@ import 'package:path/path.dart';
             amount real NOT NULL
           )
         ''');
+        }
+        if(oldVersion < 8) {
+          await db.execute("ALTER TABLE ocr_receipts rename old_receipts");
+          await db.execute('''
+            CREATE TABLE IF NOT EXISTS ocr_receipts (
+              _id INTEGER PRIMARY KEY AUTOINCREMENT,
+              userId TEXT NOT NULL,
+              image TEXT,
+              extracted_text TEXT NOT NULL,
+              date TEXT NOT NULL,
+              company TEXT,
+              nit TEXT NOT NULL,
+              user_document text NOT NULL,
+              amount real NOT NULL
+            )
+        ''');
+        await db.execute('DROP TABLE old_receipts');
         }
       },
     );

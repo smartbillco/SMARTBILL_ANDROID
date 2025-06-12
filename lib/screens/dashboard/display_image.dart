@@ -1,12 +1,11 @@
 import 'dart:io';
-import 'dart:typed_data';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:smartbill/models/ocr_receipts.dart';
 import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
+import 'package:smartbill/services/camera.dart';
 
 class DisplayImageScreen extends StatefulWidget {
   final File? image;
@@ -22,6 +21,7 @@ class DisplayImageScreen extends StatefulWidget {
 class _DisplayImageScreenState extends State<DisplayImageScreen> {
   final String userId = FirebaseAuth.instance.currentUser!.uid;
   TextEditingController _textController = TextEditingController();
+  Camera cameraService = Camera();
   
 
   List<String> ocrLines = [];
@@ -178,12 +178,10 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
   }
 
   Future<void> _saveNewOcrReceipt() async {
-
-    final Uint8List convertedImage = await widget.image!.readAsBytes();
-    print(convertedImage);
+    String? imagePath = await cameraService.saveInDirectory(widget.image);
    
     try {
-      final OcrReceipts ocrReceipts = OcrReceipts(userId: userId, image: convertedImage, extractedText: widget.recognizedText!, date: date, company: company, nit: nit, userDocument: customer, amount: total);
+      final OcrReceipts ocrReceipts = OcrReceipts(userId: userId, image: imagePath!, extractedText: widget.recognizedText!, date: date, company: company, nit: nit, userDocument: customer, amount: total);
       String result = await ocrReceipts.saveOcrReceipt();
       if(result.startsWith("Hubo un error")) {
         print(result);
@@ -213,7 +211,14 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
           spacing: 8,
             children: [
               const SizedBox(height: 10),
-              widget.image != null ? Image.file(widget.image!, width: 320,) : const Center(child: Text("La imagen no se pudo cargar")),
+              widget.image != null
+              ? InteractiveViewer(
+                  panEnabled: true, // Set to false if you only want to zoom
+                  minScale: 1,
+                  maxScale: 4,
+                  child: Image.file(widget.image!, width: 320,))
+
+              : const Center(child: Text("La imagen no se pudo cargar")),
               const SizedBox(height: 10),
               receiptRow("Empresa", company),
               receiptRow("Id de Empresa", nit),
