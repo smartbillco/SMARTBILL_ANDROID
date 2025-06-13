@@ -36,7 +36,7 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
   Future<void> getImageForReceipt() async {
 
     Uint8List image = await ocrService.fetchImage(widget.receipt['_id']);
-    print(image);
+
     setState(() {
       imageRendered = image;
     });
@@ -106,7 +106,7 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
             children: [
               imageRendered != null
               ? Image.memory(imageRendered!, width: 200,)
-              : SizedBox.shrink(),
+              : Text("La imagen es demasiado grande para ser cargada"),
               const Icon(Icons.check, size: 60, color: Colors.green,),
               const SizedBox(height: 20,),
               Text("Factura: ${widget.receipt['id_bill']}", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),),
