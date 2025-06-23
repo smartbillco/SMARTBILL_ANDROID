@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:smartbill/screens/settings/settings_widgets/backup_widget.dart';
 import 'package:smartbill/screens/settings/settings_widgets/settings_widgets.dart';
 import 'package:smartbill/services/custom_user.dart';
 import 'package:smartbill/services/settings.dart';
@@ -54,10 +55,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 30),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SettingsRow(settingsValue: settings.autoDownloadOn, title: "Descargas", subtitle: "Descargar facturas de links automáticamente"),
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
             SettingsRow(settingsValue: settings.notificationsOn, title: "Notificaciones", subtitle: "Activar notificaciones"),
+            const SizedBox(height: 18),
+            BackupWidget(),
             const SizedBox(height: 40),
             myUser.isEmpty
             ? const Column(children: [Text("Cargando información del usuario..."), SizedBox(height:10), CircularProgressIndicator()] )

@@ -206,9 +206,9 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
         title: const Text("Imagen"),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(30),
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 50),
         child: Column(
-          spacing: 8,
+          spacing: 6,
             children: [
               const SizedBox(height: 10),
               widget.image != null
@@ -254,7 +254,7 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
               ? const Text("El texto no pudo ser extraido")
               : Row(
                 mainAxisAlignment: MainAxisAlignment.center,
-                spacing: 12,
+                spacing: 10,
                 children: [
                   TextButton(onPressed: _saveNewOcrReceipt,
                     style: const ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.green)),

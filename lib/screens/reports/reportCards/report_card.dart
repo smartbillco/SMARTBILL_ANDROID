@@ -303,8 +303,8 @@ class _StatCard extends StatelessWidget {
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Container(
-        width: MediaQuery.of(context).size.width * 0.41,
-        padding: const EdgeInsets.all(8),
+        width: MediaQuery.of(context).size.width * 0.43,
+        padding: const EdgeInsets.all(5),
         child: Column(
           children: [
             Text(value, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
