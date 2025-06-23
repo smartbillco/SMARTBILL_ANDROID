@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -16,7 +17,7 @@ class BillDetailScreen extends StatefulWidget {
 class _BillDetailScreenState extends State<BillDetailScreen> {
   OcrReceiptsService ocrService = OcrReceiptsService();
   List textPdf = [];
-  Uint8List? imageRendered;
+  File? imageRendered;
 
   @override
   void initState() {
@@ -35,10 +36,12 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
 
   Future<void> getImageForReceipt() async {
 
-    Uint8List image = await ocrService.fetchImage(widget.receipt['_id']);
+    String image = await ocrService.fetchImage(widget.receipt['_id']);
+
+    File imageFile = File(image);
 
     setState(() {
-      imageRendered = image;
+      imageRendered = imageFile;
     });
 
   }
@@ -105,7 +108,11 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
           child: Column(
             children: [
               imageRendered != null
-              ? Image.memory(imageRendered!, width: 200,)
+              ? InteractiveViewer(
+                  panEnabled: true, // Set to false if you only want to zoom
+                  minScale: 1,
+                  maxScale: 4,
+                  child: Image.file(imageRendered!))
               : Text("La imagen es demasiado grande para ser cargada"),
               const Icon(Icons.check, size: 60, color: Colors.green,),
               const SizedBox(height: 20,),

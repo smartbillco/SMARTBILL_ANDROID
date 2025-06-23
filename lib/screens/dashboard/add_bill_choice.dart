@@ -39,6 +39,7 @@ class _AddBillChoiceState extends State<AddBillChoice> {
     FilePickerResult? fileResult = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['xml']);
 
     if (fileResult != null) {
+
       String filePath = fileResult.files.single.path!;
       String fileName = fileResult.files.single.name.toLowerCase();
 
@@ -96,7 +97,7 @@ class _AddBillChoiceState extends State<AddBillChoice> {
 
     if(pickedImage != null) {
       final image = File(pickedImage.path);
-      final String recognizedText = await cameraService.extractTextFromImage(pickedImage);
+      final String recognizedText = await cameraService.extractTextFromImage(pickedImage as XFile?);
 
       if(recognizedText == 'error') {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Parece que la imagen no contiene información completa o no es una factura")));

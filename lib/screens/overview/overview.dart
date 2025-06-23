@@ -33,6 +33,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
   Widget build(BuildContext context) {
     return PageView(
       controller: _pageController,
+      physics: const BouncingScrollPhysics(),
       onPageChanged: (index) {
         changePage(index);
       },
