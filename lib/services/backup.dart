@@ -73,17 +73,24 @@ class BackupService {
         print("Created backup folder at ${backupDir.path}");
       } 
 
-      for(int i = 0; i < xmlFiles.length; i++) {
-        final String fileName = "backup_$i";
-        File file = File('${backupDir.path}/$fileName.xml');
-        await file.writeAsString(xmlFiles[i]['xml_text']);
-        print("Done!");
+      if(xmlFiles.length > 0 ) {
+        for(int i = 1; i <= xmlFiles.length; i++) {
+          final String fileName = "backup_$i";
+          File file = File('${backupDir.path}/$fileName.xml');
+          await file.writeAsString(xmlFiles[i]['xml_text']);
+          print("Done!");
 
+        }
+
+        return "success";
       }
 
-      return "success";
+      return "no data";
+
+      
 
     } catch (e) {
+      print("Error: $e");
       return "Error: $e";
     }
     

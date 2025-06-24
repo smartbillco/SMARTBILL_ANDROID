@@ -22,9 +22,6 @@ class _BackupWidgetState extends State<BackupWidget> {
         final String dianBackupResponse = await backupService.saveDianPdfs(context);
         final String xmlBackupResponse = await backupService.saveXmlBackup();
 
-        print(dianBackupResponse);
-        print(xmlBackupResponse);
-
         if(dianBackupResponse == 'success' || xmlBackupResponse == 'success') {
             for(var i = 0; i <= 4; i++) {
               await Future.delayed(Duration(seconds: 1), () {
@@ -44,13 +41,13 @@ class _BackupWidgetState extends State<BackupWidget> {
 
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Se guardo la copia de seguridad")));
 
-        } else if (dianBackupResponse == 'empty folder') {
+        } else if (dianBackupResponse == 'empty folder' && xmlBackupResponse == 'no data') {
           
           setState(() {
             _isDownloading = false;
             _progress = 0;
           });
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("No tienes PDFs de la DIAN")));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("No tienes facturas para guardar")));
 
         } else {
           setState(() {
@@ -75,17 +72,17 @@ class _BackupWidgetState extends State<BackupWidget> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Confirmar respaldo'),
-          content: Text('¿Quieres exportar sus archivos a una carpeta?'),
+          title: const Text('Confirmar respaldo'),
+          content: const Text('¿Quieres exportar sus archivos a una carpeta?'),
           actions: [
             TextButton(
-              child: Text('Cancelar', style: TextStyle(color: Colors.pinkAccent),),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.pinkAccent),),
               onPressed: () {
                 Navigator.of(context).pop(); // close dialog
               },
             ),
             ElevatedButton(
-              child: Text('Confirmar', style: TextStyle(color: Colors.green),),
+              child: const Text('Confirmar', style: TextStyle(color: Colors.green),),
               onPressed: () async {
                 setState(() {
                   _isDownloading = true; 
