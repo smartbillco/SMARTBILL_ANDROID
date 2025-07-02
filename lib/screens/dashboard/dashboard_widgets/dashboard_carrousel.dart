@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:smartbill/screens/cryptocurrencies/crypto_currency.dart';
 import 'package:smartbill/services/crypto_provider.dart';
 import 'package:smartbill/services/db.dart';
 import 'package:smartbill/route_observer.dart';
@@ -105,7 +106,7 @@ class _DashboardCarrouselState extends State<DashboardCarrousel> with RouteAware
                     title: Text('${items[index]['name']} (${items[index]['symbol']})', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500),),
                     subtitle: Text(NumberFormat("#,##0.00").format(items[index]['current_price']), style: TextStyle(fontSize: 16)),
                     onTap: () {
-                      Navigator.pushNamed(context, '/cryptocurrency');
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => CryptoListScreen()));
                     },
                   
                 ),

@@ -43,7 +43,7 @@ class _SettingsRowState extends State<SettingsRow> {
           children: [
             Text(widget.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
             const SizedBox(height: 6),
-            Container(width: 200, child: Text(widget.subtitle, style: const TextStyle(color: Colors.grey))),
+            Container(width: 200, child: Text(widget.subtitle, style: const TextStyle(color: Colors.black54))),
           ],
         ),
         Switch(

@@ -25,6 +25,7 @@ class _AddBillChoiceState extends State<AddBillChoice> {
   final PdfService pdfService = PdfService();
   final Camera cameraService = Camera();
 
+
   //Snackbar for receipt cancel
   //Cancelled picking a xml file
   void _showSnackbarCancelXml() {
@@ -122,6 +123,7 @@ class _AddBillChoiceState extends State<AddBillChoice> {
         Navigator.pop(context);
       } else {
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: croppedImage, recognizedText: recognizedText)));
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: croppedImage, recognizedText: recognizedText)));
 
       }
 
@@ -149,6 +151,7 @@ class _AddBillChoiceState extends State<AddBillChoice> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Parece que la imagen no contiene información completa o no es una factura")));
       Navigator.pop(context);
     } else {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: croppedImage, recognizedText: recognizedText)));
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: croppedImage, recognizedText: recognizedText)));
 
     }

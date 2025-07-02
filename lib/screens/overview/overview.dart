@@ -11,13 +11,14 @@ class OverviewScreen extends StatefulWidget {
 
 class _OverviewScreenState extends State<OverviewScreen> {
   late PageController _pageController;
-  List<Widget> pages = [
-    const DashboardScreen(),
-    const ReportsScreen()
-  ];
   int _currentPage = 0;
 
   void changePage(int index) {
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+    );
     setState(() {
       _currentPage = index;
     });
@@ -26,18 +27,26 @@ class _OverviewScreenState extends State<OverviewScreen> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: _currentPage);
+    _pageController = PageController(); 
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    _pageController.dispose();
+    super.dispose();
+    
   }
 
   @override
   Widget build(BuildContext context) {
     return PageView(
       controller: _pageController,
-      physics: const BouncingScrollPhysics(),
-      onPageChanged: (index) {
-        changePage(index);
-      },
-      children: pages,
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        const DashboardScreen(),
+        const ReportsScreen()
+      ],
     );
   }
 }
