@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
-import 'package:smartbill/screens/dashboard/dashboard.dart';
+import 'package:smartbill/screens/wrapper.dart';
 import 'package:smartbill/services/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -31,7 +31,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
     if (user != null) {
       Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const DashboardScreen()), (r) => false);
+          MaterialPageRoute(builder: (context) => const Wrapper()), (r) => false);
     }
 
     if (user == null) {

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:smartbill/screens/dashboard/display_image.dart';
 import 'package:smartbill/services/camera.dart';
+import 'package:smartbill/services/crop_image.dart';
 import 'package:smartbill/services/pdf_reader.dart';
 import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
 import 'package:smartbill/services/pdf.dart';
@@ -17,10 +18,12 @@ class AddBillChoice extends StatefulWidget {
 }
 
 class _AddBillChoiceState extends State<AddBillChoice> {
+  final CropImageService cropImageService = CropImageService();
   final Xmlhandler xmlhandler = Xmlhandler();
   final PdfHandler pdfHandler = PdfHandler();
   final PdfService pdfService = PdfService();
   final Camera cameraService = Camera();
+
 
   //Snackbar for receipt cancel
   //Cancelled picking a xml file
@@ -91,7 +94,7 @@ class _AddBillChoiceState extends State<AddBillChoice> {
     }
   }
 
-
+  //Pick from gallery
   Future<void> _pickImage() async {
     final pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
 
@@ -99,11 +102,21 @@ class _AddBillChoiceState extends State<AddBillChoice> {
       final image = File(pickedImage.path);
       final String recognizedText = await cameraService.extractTextFromImage(pickedImage as XFile?);
 
-      if(recognizedText == 'error') {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Parece que la imagen no contiene información completa o no es una factura")));
-        Navigator.pop(context);
+      final croppedImage = await cropImageService.cropImage(image);
+
+
+      if(croppedImage != null) {
+        if(recognizedText == 'error') {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Parece que la imagen no contiene información completa o no es una factura")));
+          Navigator.pop(context);
+        } else {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: croppedImage, recognizedText: recognizedText)));
+
+        }
+
       } else {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: image, recognizedText: recognizedText)));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("No se selecciono una imagen")));
+        Navigator.pop(context);
 
       }
 
@@ -114,6 +127,8 @@ class _AddBillChoiceState extends State<AddBillChoice> {
 
   }
 
+
+  //Take picture
   void _takePicture() async {
 
     final ImagePicker picker = ImagePicker();
@@ -123,13 +138,24 @@ class _AddBillChoiceState extends State<AddBillChoice> {
     
     File image = File(pickedImage!.path);
 
-    if(recognizedText == 'error') {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Parece que la imagen no contiene información completa o no es una factura")));
-      Navigator.pop(context);
+    final croppedImage = await cropImageService.cropImage(image);
+
+    if(croppedImage != null) {
+      if(recognizedText == 'error') {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Parece que la imagen no contiene información completa o no es una factura")));
+        Navigator.pop(context);
+      } else {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: croppedImage, recognizedText: recognizedText)));
+
+      }
+
     } else {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: image, recognizedText: recognizedText)));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Parece que hubo un error al recortar la imagen")));
+      Navigator.pop(context);
 
     }
+
+    
     
   }
 

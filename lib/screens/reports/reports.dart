@@ -77,9 +77,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
           ),
         ),
       ),
-      body: const SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 20.0, horizontal: 12),
+      body: SingleChildScrollView(
+        child: const Padding(
+          padding: EdgeInsets.symmetric(vertical: 40.0, horizontal: 12),
           child: Column(
             spacing: 4,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -95,7 +95,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
               BalanceGraph(),
               Text('Gastos por categoria', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600)),
               ExpensePieChart()
-        
             ],
           ),
         ),
