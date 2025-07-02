@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
@@ -113,7 +112,7 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
                   minScale: 1,
                   maxScale: 4,
                   child: Image.file(imageRendered!))
-              : Text("La imagen es demasiado grande para ser cargada"),
+              : const SizedBox.shrink(),
               const Icon(Icons.check, size: 60, color: Colors.green,),
               const SizedBox(height: 20,),
               Text("Factura: ${widget.receipt['id_bill']}", style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),),

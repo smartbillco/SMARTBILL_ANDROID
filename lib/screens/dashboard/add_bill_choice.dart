@@ -2,8 +2,10 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:smartbill/screens/dashboard/display_image.dart';
 import 'package:smartbill/services/camera.dart';
+import 'package:smartbill/services/crop_image.dart';
 import 'package:smartbill/services/pdf_reader.dart';
 import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
 import 'package:smartbill/services/pdf.dart';
@@ -17,6 +19,7 @@ class AddBillChoice extends StatefulWidget {
 }
 
 class _AddBillChoiceState extends State<AddBillChoice> {
+  final CropImageService cropImageService = CropImageService();
   final Xmlhandler xmlhandler = Xmlhandler();
   final PdfHandler pdfHandler = PdfHandler();
   final PdfService pdfService = PdfService();
@@ -58,26 +61,37 @@ class _AddBillChoiceState extends State<AddBillChoice> {
   Future<void> _pickAndDisplayPDFFile() async {
     FilePickerResult? fileResult = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['pdf']);
 
+    //Send pdf to backend
     if (fileResult != null) {
+       String filePath = fileResult.files.single.path!;
 
       try {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Subiendo PDF..."), duration: Duration(seconds: 5),));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Subiendo PDF..."), duration: Duration(seconds: 3),));
 
-        String filePath = fileResult.files.single.path!;
+        //Save whole PDF locally
+        final dir = Platform.isAndroid ?  await getExternalStorageDirectory() : await getApplicationDocumentsDirectory(); 
+        final savePath = "${dir!.path}/pdfs";
+        final dirPath = Directory(savePath);
+
+        if(!await dirPath.exists()) {
+          await Directory(savePath).create(recursive: true);
+        }
         File pdfFile = File(filePath);
-        //String fileName = fileResult.files.single.name.toLowerCase();
 
-        await pdfService.saveExtractedText(pdfFile);
+        //Send PDF to backend
+        final cufe = await pdfService.saveExtractedText(pdfFile);
 
-        Future.delayed(Duration(seconds: 4), () {
+        File savedFile = File("${dirPath.path}/$cufe");
+        await pdfFile.copy(savedFile.path);
+        print("✅ PDF saved at: ${savedFile.path}");
+
+        Future.delayed(const Duration(seconds: 4), () {
           if(mounted) {
             Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const ReceiptScreen()));
           }
         });
 
       } catch(e) {
-        
-        print("ERROR saving pdf: $e");
 
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("La factura ya existe, o hubo un error cargandola. Intente con otra factura.")));
 
@@ -92,6 +106,7 @@ class _AddBillChoiceState extends State<AddBillChoice> {
   }
 
 
+  //Pick and crop from gallery
   Future<void> _pickImage() async {
     final pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
 
@@ -99,21 +114,26 @@ class _AddBillChoiceState extends State<AddBillChoice> {
       final image = File(pickedImage.path);
       final String recognizedText = await cameraService.extractTextFromImage(pickedImage as XFile?);
 
+      final croppedImage = await cropImageService.cropImage(image);
+
+
       if(recognizedText == 'error') {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Parece que la imagen no contiene información completa o no es una factura")));
         Navigator.pop(context);
       } else {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: image, recognizedText: recognizedText)));
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: croppedImage, recognizedText: recognizedText)));
 
       }
 
       
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("No se selecciono imagen")));
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("No se selecciono imagen")));
     }
 
   }
 
+
+  //Take and crop picture
   void _takePicture() async {
 
     final ImagePicker picker = ImagePicker();
@@ -123,11 +143,13 @@ class _AddBillChoiceState extends State<AddBillChoice> {
     
     File image = File(pickedImage!.path);
 
+    final croppedImage = await cropImageService.cropImage(image);
+
     if(recognizedText == 'error') {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Parece que la imagen no contiene información completa o no es una factura")));
       Navigator.pop(context);
     } else {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: image, recognizedText: recognizedText)));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: croppedImage, recognizedText: recognizedText)));
 
     }
     

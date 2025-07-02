@@ -47,7 +47,7 @@ class _UpdateAddressScreenState extends State<UpdateAddressScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Actualizar ID"),
+        title: Text("Actualizar Dirección"),
       ),
       body: Padding(
         padding: const EdgeInsets.all(35),
@@ -62,7 +62,9 @@ class _UpdateAddressScreenState extends State<UpdateAddressScreen> {
               ),
             ),
             const SizedBox(height: 50),
-            SizedBox(
+            isLoading 
+            ? const CircularProgressIndicator()
+            : SizedBox(
               width: MediaQuery.of(context).size.width - 20,
               child: ElevatedButton(
                 style: const ButtonStyle(

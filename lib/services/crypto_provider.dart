@@ -18,7 +18,6 @@ class CryptoProvider with ChangeNotifier {
 
       if(response.statusCode == 200) {
         _cryptoData = jsonDecode(response.body);
-        print(_cryptoData);
       } else {
         print("Fetch wasn't succesfull");
       }
