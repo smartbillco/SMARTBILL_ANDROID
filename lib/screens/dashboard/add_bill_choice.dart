@@ -8,7 +8,6 @@ import 'package:smartbill/services/camera.dart';
 import 'package:smartbill/services/crop_image.dart';
 import 'package:smartbill/services/pdf_reader.dart';
 import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
-import 'package:smartbill/services/pdf.dart';
 import 'package:smartbill/services/xml/xml.dart';
 
 class AddBillChoice extends StatefulWidget {
@@ -21,7 +20,6 @@ class AddBillChoice extends StatefulWidget {
 class _AddBillChoiceState extends State<AddBillChoice> {
   final CropImageService cropImageService = CropImageService();
   final Xmlhandler xmlhandler = Xmlhandler();
-  final PdfHandler pdfHandler = PdfHandler();
   final PdfService pdfService = PdfService();
   final Camera cameraService = Camera();
 
@@ -113,9 +111,12 @@ class _AddBillChoiceState extends State<AddBillChoice> {
 
     if(pickedImage != null) {
       final image = File(pickedImage.path);
+
       final String recognizedText = await cameraService.extractTextFromImage(pickedImage as XFile?);
 
-      final croppedImage = await cropImageService.cropImage(image);
+      final File croppedImage = await cropImageService.cropImage(image);
+
+      print(croppedImage.path);
 
 
       if(recognizedText == 'error') {

@@ -135,4 +135,16 @@ class PdfService {
     }
   }
 
+  Map<String, dynamic> parseDIANpdf(String billNumber, String company, String? date, String? total) {
+    Map<String, dynamic> dianPdf = {
+      'bill_number': billNumber,
+      'company': company,
+      'date': date,
+      'total': total
+    };
+
+    return dianPdf;
+
+  }
+
 }

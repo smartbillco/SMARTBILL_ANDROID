@@ -4,7 +4,6 @@ import 'package:xml/xml.dart';
 
 class XmlPeru extends Xmlhandler {
 
-
   String parseCData(XmlDocument xmlDocument, String search) {
     final cDataContent = xmlDocument.findAllElements(search)
       .toList()

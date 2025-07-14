@@ -2,8 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:smartbill/screens/settings/settings_widgets/backup_widget.dart';
+import 'package:smartbill/screens/settings/settings_widgets/restore_widget.dart';
 import 'package:smartbill/screens/settings/settings_widgets/settings_widgets.dart';
-import 'package:smartbill/screens/settings/settings_widgets/backup_widget.dart';
 import 'package:smartbill/services/custom_user.dart';
 import 'package:smartbill/services/settings.dart';
 
@@ -61,6 +61,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             SettingsRow(settingsValue: settings.notificationsOn, title: "Notificaciones", subtitle: "Activar notificaciones"),
             const SizedBox(height: 18),
             const BackupWidget(),
+            const SizedBox(height: 18),
+            const RestoreWidget(),
             const SizedBox(height: 40),
             myUser.isEmpty
             ? const Column(children: [Text("Cargando información del usuario..."), SizedBox(height:10), CircularProgressIndicator()] )

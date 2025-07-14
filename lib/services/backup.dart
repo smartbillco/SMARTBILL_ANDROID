@@ -1,22 +1,22 @@
 import 'dart:io';
+import 'package:archive/archive.dart';
 import 'package:path/path.dart' as p;
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:smartbill/services/db.dart';
 import 'package:sqflite/sqflite.dart';
 
 class BackupService {
   late Directory backupDir;
-  DatabaseConnection databaseConnection = DatabaseConnection();
+  final archive = Archive();
 
   Future<void> initBackupDir() async {
 
     //If the smartbill folder doesn't exist, creates it
     if (Platform.isAndroid) {
-      backupDir = Directory("/storage/emulated/0/Download/smartbill");
+      backupDir = Directory("/storage/emulated/0/Download/smartbill_backup");
     } else if (Platform.isIOS) {
       final docsDir = await getApplicationDocumentsDirectory();
-      backupDir = Directory("${docsDir.path}/smartbill");
+      backupDir = Directory(p.join(docsDir.path, 'smartbill_backup'));
     }
 
     //check if backup folder exists
@@ -29,148 +29,55 @@ class BackupService {
     
   }
 
+  Future<void> _copyRecursive(Directory from, Directory to) async {
+    await for (var entity in from.list(recursive: true)) {
+      if (entity is File) {
+        final relative = p.relative(entity.path, from: from.path);
+        final newPath = p.join(to.path, relative);
+        final newFile = File(newPath);
 
-  Future<String> saveDianPdfsBackup() async {
-    final dPath = Platform.isAndroid
-        ? await getExternalStorageDirectory()
-        : await getApplicationDocumentsDirectory();
-    final dirPath = "${dPath!.path}/invoices";
-    final dir = Directory(dirPath);
-    await initBackupDir();
+        await newFile.parent.create(recursive: true);
+        await entity.copy(newPath);
+      }
+    }
+  }
+
+
+  Future<String> backupFilesFolder() async {
 
     try {
-      
+      final directory = Platform.isAndroid ? await getExternalStorageDirectory() : await getApplicationDocumentsDirectory();
 
-      //Check if folder containing pdf exists if not create
-      if (!await dir.exists()) {
-        await dir.create(recursive: true);
-        print("Created backup folder at ${dir.path}");
+      if(!await directory!.exists() || await directory.list().isEmpty) {
+        return "no files";
       }
 
-      final contents = dir.listSync();
+      final entities = directory.listSync(recursive: false);
 
-      if (!await dir.exists() || contents.isEmpty) {
-        return "folder vacio";
-      }
+      for (var entity in entities) {
+        if (entity is Directory) {
+          final folderName = p.basename(entity.path);
+          final destinationFolder = Directory(p.join(backupDir.path, folderName));
 
-      final List<FileSystemEntity> dianFiles = dir.listSync();
-      for (var file in dianFiles) {
-        if (file is File && file.path.toLowerCase().endsWith('.pdf')) {
-          final fileName = p.basename(file.path);
-          final newPath = p.join(backupDir.path, fileName);
-          await file.copy(newPath);
+          if (!await destinationFolder.exists()) {
+            await destinationFolder.create(recursive: true);
+          }
+
+          print("created ${entity.path}");
+          await _copyRecursive(entity, destinationFolder);
+
         }
       }
 
-      print("Pdfs saved to download");
+      print("All folders and their contents copied.");
 
       return "success";
-    } catch (e) {
-      print("Error: $e");
-      return "Error: $e";
-    }
-  }
 
-  Future<String> saveXmlBackup() async {
-    try {
-      final db = await databaseConnection.openDb();
-      final xmlFiles = await db.query('xml_files');
-
-      if (xmlFiles.length > 0) {
-        for (int i = 0; i < xmlFiles.length; i++) {
-          final String fileName = "factura_xml_$i";
-          File file = File('${backupDir.path}/$fileName.xml');
-          await file.writeAsString(xmlFiles[i]['xml_text']);
-          print("Done!");
-        }
-
-        return "success";
-      } else {
-        return "folder vacio";
-      }
-    } catch (e) {
-      print("Error: $e");
-      return "Error: $e";
-    }
-  }
-
-  Future<String> savePdfBackup() async {
-    final dPath = Platform.isAndroid
-        ? await getExternalStorageDirectory()
-        : await getApplicationDocumentsDirectory();
-    final dirPath = "${dPath!.path}/pdfs";
-    final dir = Directory(dirPath);
-
-    try {
-
-      //Check if folder containing pdf exists if not create
-      if (!await dir.exists()) {
-        await dir.create(recursive: true);
-        print("Created backup folder at ${dir.path}");
-      }
-
-      final contents = dir.listSync();
-
-      if (!await dir.exists() || contents.isEmpty) {
-        return "folder vacio";
-      }
-
-      final List<FileSystemEntity> dianFiles = dir.listSync();
-      for (var file in dianFiles) {
-        if (file is File && file.path.toLowerCase().endsWith('.pdf')) {
-          final fileName = p.basename(file.path);
-          final newPath = p.join(backupDir.path, fileName);
-          await file.copy(newPath);
-          print("Copied $fileName to backup folder.");
-        }
-      }
-
-      return "success";
-    } catch (e) {
-      print("Error: $e");
-      return "Error: $e";
-    }
-  }
-
-
-  Future<String> saveImageBackup() async {
-
-    final directory = await getApplicationDocumentsDirectory();
-
-    final imagesDir = Directory(p.join(directory.path, 'images'));
-
-    try {
-
-      // Ensure it exists
-      if (!await imagesDir.exists()) {
-        await imagesDir.create(recursive: true);
-      }
-
-      final contents = imagesDir.listSync().whereType<File>();
-
-      if (!await imagesDir.exists() || contents.isEmpty) {
-        return "folder vacio";
-      } 
-      
-      for (final file in contents) {
-        final newPath = p.join(backupDir.path, p.basename(file.path));
-        final dest = File(newPath);
-
-        if (!await dest.exists()) {
-          await file.copy(newPath);        // <-- works because `file` is a `File`
-          print('Copied ${file.path}');
-        } else {
-          print('Skipped ${file.path} (already exists)');
-        }
-      }
-
-    return "success";
-    
     } catch(e) {
       print("Error: $e");
-      return "Ha habido un error: $e";
+      return "Hubo un error: $e";
     }
-
+    
   }
 
 
@@ -185,7 +92,7 @@ class BackupService {
     try {
       final dbPath = await getDatabasePath();
       final dbFile = File(dbPath);
-      final backupPath = join(backupDir.path, 'smartbill_backup.db');
+      final backupPath = join(backupDir.path, 'smartbill.db');
 
       await dbFile.copy(backupPath);
 

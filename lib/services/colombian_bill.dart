@@ -1,10 +1,10 @@
 import 'package:smartbill/services/db.dart';
 
 class ColombianBill {
-  final DatabaseConnection dbConnection = DatabaseConnection();
+  final DatabaseConnection _databaseConnection = DatabaseConnection();
 
   Future<dynamic> saveColombianBill(Map<String, Object?> colombianBill) async {
-    var db = await dbConnection.openDb();
+    var db = await _databaseConnection.db;
 
     try {
       await db.insert('colombian_bill', colombianBill);
@@ -17,8 +17,7 @@ class ColombianBill {
 
   Future getColombianBills() async {
     try {
-      DatabaseConnection databaseConnection = DatabaseConnection();
-      var db = await databaseConnection.openDb();
+      final db = await _databaseConnection.db;
       var result = await db.query('colombian_bill');
       return result;
     } catch(e) {

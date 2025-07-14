@@ -2,14 +2,23 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
  class DatabaseConnection {
+  static final DatabaseConnection _instance = DatabaseConnection._internal();
+  factory DatabaseConnection() => _instance;
+  DatabaseConnection._internal();
   
-  late Database db;
+  Database? _db;
+
+  //Return the getter
+  Future<Database> get db async {
+    _db ??= await openDb();
+    return _db!;
+  }
 
   Future openDb() async {
     var databasesPath = await getDatabasesPath();
     var path = join(databasesPath, 'smartbill.db');
 
-    return db = await openDatabase(path, version: 1,
+    return _db = await openDatabase(path, version: 1,
 
       onCreate: (Database db, int version) async {
         
@@ -100,8 +109,12 @@ import 'package:path/path.dart';
       onDowngrade: onDatabaseDowngradeDelete
     );
   }
-
-  Future closeDB() async => db.close();
+  Future<void> close() async {
+    if (_db != null) {
+      await _db!.close();
+      _db = null;
+    }
+  }
 
   Future deleteDb() async {
 
