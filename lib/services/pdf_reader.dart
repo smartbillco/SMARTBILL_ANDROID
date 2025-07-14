@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:path/path.dart';
 import 'package:http_parser/http_parser.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:smartbill/models/pdf.dart';
 import 'package:smartbill/services/db.dart'; 
 
@@ -83,7 +84,7 @@ class PdfService {
   return double.parse(number);
   }
 
-  Future<void> saveExtractedText(File pdfFile) async {
+  Future<String> saveExtractedText(File pdfFile) async {
     Map<String, dynamic> pdfData = await extractTextfromPdf(pdfFile);
 
     double amount = parseDouble(pdfData['TOTAL']);
@@ -96,6 +97,8 @@ class PdfService {
 
     print("El registro número $result, se creó");
 
+    return pdf.cufe;
+
     
   }
 
@@ -104,18 +107,31 @@ class PdfService {
     var db = await databaseConnection.openDb();
     var result = await db.query('pdfs');
     return result;
-
   }
 
 
-  Future<void> deletePdf(int id) async {
+  Future<void> deletePdf(int id, String cufe) async {
+    final dir = Platform.isAndroid ?  await getExternalStorageDirectory() : await getApplicationDocumentsDirectory(); 
+    final filePath = "${dir!.path}/pdfs/$cufe";
+
     try {
+      //Delete pdf from local storage
+      final file = File(filePath);
+
+      if(await file.exists()) {
+        await file.delete();
+        print('🗑️ Deleted: $cufe');
+      } else {
+        print('❌ File not found: $cufe');
+      }
+
+      //Dekete from database
       DatabaseConnection databaseConnection = DatabaseConnection();
       var db = await databaseConnection.openDb(); 
       await db.delete('pdfs', where: '_id = ?', whereArgs: [id]);
       print("deleted");
     } catch (e){
-      print("Could not delete: $e");
+      print("❌ Could not delete: $e");
     }
   }
 

@@ -29,7 +29,7 @@ class _DeleteDialogWidgetState extends State<DeleteDialogWidget> {
     try {
       if(item['currency'] == 'PDF') {
         print("Deleted");
-        await pdfService.deletePdf(item['_id']);
+        await pdfService.deletePdf(item['_id'], item['cufe']);
 
       } else if (item['type'] == 'bill_co') {
         await colombiaBill.deleteBill(item['_id']);

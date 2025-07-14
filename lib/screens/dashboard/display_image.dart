@@ -20,7 +20,7 @@ class DisplayImageScreen extends StatefulWidget {
 
 class _DisplayImageScreenState extends State<DisplayImageScreen> {
   final String userId = FirebaseAuth.instance.currentUser!.uid;
-  TextEditingController _textController = TextEditingController();
+  final TextEditingController _textController = TextEditingController();
   Camera cameraService = Camera();
   
 
@@ -187,7 +187,7 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
         print(result);
       } else {
         print("Success! $result");
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Factura descargada")));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Descargando factura...")));
         Future.delayed(const Duration(seconds: 3), () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ReceiptScreen())));
         
       }
@@ -206,7 +206,7 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
         title: const Text("Imagen"),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 50),
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 60),
         child: Column(
           spacing: 6,
             children: [

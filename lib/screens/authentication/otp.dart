@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pinput/pinput.dart';
-import 'package:smartbill/screens/wrapper.dart';
+import 'package:smartbill/screens/overview/overview.dart';
 import 'package:smartbill/services/auth.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -31,7 +31,7 @@ class _OtpScreenState extends State<OtpScreen> {
 
     if (user != null) {
       Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const Wrapper()), (r) => false);
+          MaterialPageRoute(builder: (context) => const OverviewScreen()), (r) => false);
     }
 
     if (user == null) {
@@ -104,18 +104,22 @@ class _OtpScreenState extends State<OtpScreen> {
             ),
             isLoading
                 ? const CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: simHttpRequest,
-                    style: const ButtonStyle(
-                        backgroundColor:
-                            WidgetStatePropertyAll(Color.fromARGB(255, 75, 78, 80))),
-                    child: const Padding(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 40, vertical: 7),
-                      child: Text("Verificar",
-                          style: TextStyle(color: Colors.white, fontSize: 16)),
+                : SizedBox(
+                  width: MediaQuery.of(context).size.width,
+                  height: 45,
+                  child: ElevatedButton(
+                      onPressed: simHttpRequest,
+                      style: const ButtonStyle(
+                          backgroundColor:
+                              WidgetStatePropertyAll(Color.fromARGB(255, 75, 78, 80))),
+                      child: const Padding(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 40, vertical: 7),
+                        child: Text("Verificar",
+                            style: TextStyle(color: Colors.white, fontSize: 16)),
+                      ),
                     ),
-                  ),
+                ),
 
             //Form for four digits
           ],

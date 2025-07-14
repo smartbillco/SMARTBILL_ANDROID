@@ -2,6 +2,32 @@ C/C++ Structured Log€
 ~
 |C:\Users\User\Desktop\flutter_apps\smartbill\android\app\.cxx\RelWithDebInfo\18641w5q\arm64-v8a\additional_project_files.txtC
 A
+<<<<<<< HEAD
+?com.android.build.gradle.internal.cxx.io.EncodedFileFingerPrint	˜ø„ßü2 »ä“”ë2}
+{
+yC:\Users\User\Desktop\flutter_apps\smartbill\android\app\.cxx\RelWithDebInfo\18641w5q\arm64-v8a\android_gradle_build.json	˜ø„ßü2Ù ¿ä“”ë2ƒ
+€
+~C:\Users\User\Desktop\flutter_apps\smartbill\android\app\.cxx\RelWithDebInfo\18641w5q\arm64-v8a\android_gradle_build_mini.json	˜ø„ßü2¶ Çä“”ë2o
+m
+kC:\Users\User\Desktop\flutter_apps\smartbill\android\app\.cxx\RelWithDebInfo\18641w5q\arm64-v8a\build.ninja	˜ø„ßü2éÔ ¥ã“”ë2s
+q
+oC:\Users\User\Desktop\flutter_apps\smartbill\android\app\.cxx\RelWithDebInfo\18641w5q\arm64-v8a\build.ninja.txt	™ø„ßü2x
+v
+tC:\Users\User\Desktop\flutter_apps\smartbill\android\app\.cxx\RelWithDebInfo\18641w5q\arm64-v8a\build_file_index.txt	™ø„ßü2K Ìä“”ë2y
+w
+uC:\Users\User\Desktop\flutter_apps\smartbill\android\app\.cxx\RelWithDebInfo\18641w5q\arm64-v8a\compile_commands.json	™ø„ßü2}
+{
+yC:\Users\User\Desktop\flutter_apps\smartbill\android\app\.cxx\RelWithDebInfo\18641w5q\arm64-v8a\compile_commands.json.bin	™ø„ßü2	„
+
+C:\Users\User\Desktop\flutter_apps\smartbill\android\app\.cxx\RelWithDebInfo\18641w5q\arm64-v8a\metadata_generation_command.txt	™ø„ßü2
+‡	 Ëä“”ë2v
+t
+rC:\Users\User\Desktop\flutter_apps\smartbill\android\app\.cxx\RelWithDebInfo\18641w5q\arm64-v8a\prefab_config.json	™ø„ßü2( Ëä“”ë2{
+y
+wC:\Users\User\Desktop\flutter_apps\smartbill\android\app\.cxx\RelWithDebInfo\18641w5q\arm64-v8a\symbol_folder_index.txt	™ø„ßü2n Ìä“”ë2O
+M
+KF:\dev\flutter\packages\flutter_tools\gradle\src\main\groovy\CMakeLists.txt	™ø„ßü2§ ˜õ±¯Ú2
+=======
 ?com.android.build.gradle.internal.cxx.io.EncodedFileFingerPrint	Ãûðöù2 »ä“”ë2}
 {
 yC:\Users\User\Desktop\flutter_apps\smartbill\android\app\.cxx\RelWithDebInfo\18641w5q\arm64-v8a\android_gradle_build.json	Ãûðöù2Ù ¿ä“”ë2ƒ
@@ -26,3 +52,4 @@ y
 wC:\Users\User\Desktop\flutter_apps\smartbill\android\app\.cxx\RelWithDebInfo\18641w5q\arm64-v8a\symbol_folder_index.txt	Ãûðöù2n Ìä“”ë2O
 M
 KF:\dev\flutter\packages\flutter_tools\gradle\src\main\groovy\CMakeLists.txt	Ãûðöù2§ ˜õ±¯Ú2
+>>>>>>> 855ad191cd2c664ef80b86bd143c183955bacf9f

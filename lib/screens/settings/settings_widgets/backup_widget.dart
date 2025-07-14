@@ -18,14 +18,14 @@ class _BackupWidgetState extends State<BackupWidget> {
   Future<void> _createBackUp() async {
 
       try {
-
-        final String dianBackupResponse = await backupService.saveDianPdfs(context);
+        await backupService.initBackupDir();
+        final String dianBackupResponse = await backupService.saveDianPdfsBackup();
         final String xmlBackupResponse = await backupService.saveXmlBackup();
+        final String pdfBackupResponse = await backupService.savePdfBackup();
+        final String imageBackupResponse = await backupService.saveImageBackup();
+        await backupService.backupDatabase();
 
-        print(dianBackupResponse);
-        print(xmlBackupResponse);
-
-        if(dianBackupResponse == 'success' || xmlBackupResponse == 'success') {
+        if(dianBackupResponse == 'success' || xmlBackupResponse == 'success' || pdfBackupResponse == 'success' || imageBackupResponse == 'success' ) {
             for(var i = 0; i <= 4; i++) {
               await Future.delayed(Duration(seconds: 1), () {
                 setState(() {
@@ -44,28 +44,26 @@ class _BackupWidgetState extends State<BackupWidget> {
 
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Se guardo la copia de seguridad")));
 
-        } else if (dianBackupResponse == 'empty folder') {
+        } else if (dianBackupResponse == "folder vacio" && xmlBackupResponse == "folder vacio" && pdfBackupResponse == "folder vacio" && imageBackupResponse == "folder vacio") {
           
           setState(() {
             _isDownloading = false;
             _progress = 0;
           });
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("No tienes PDFs de la DIAN")));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("No tienes facturas para guardar")));
 
         } else {
           setState(() {
             _isDownloading = false;
             _progress = 0;
           });
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(dianBackupResponse)));
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hay un error exportando los datos.")));
         } 
 
 
       } catch(e) {
         print("Hubo un error: $e");
       }
-
-    
 
   }
 
@@ -75,17 +73,17 @@ class _BackupWidgetState extends State<BackupWidget> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Confirmar respaldo'),
-          content: Text('¿Quieres exportar sus archivos a una carpeta?'),
+          title: const Text('Confirmar respaldo'),
+          content: const Text('¿Quieres exportar sus archivos a una carpeta?'),
           actions: [
             TextButton(
-              child: Text('Cancelar', style: TextStyle(color: Colors.pinkAccent),),
+              child: const Text('Cancelar', style: TextStyle(color: Colors.pinkAccent),),
               onPressed: () {
                 Navigator.of(context).pop(); // close dialog
               },
             ),
             ElevatedButton(
-              child: Text('Confirmar', style: TextStyle(color: Colors.green),),
+              child: const Text('Confirmar', style: TextStyle(color: Colors.green),),
               onPressed: () async {
                 setState(() {
                   _isDownloading = true; 

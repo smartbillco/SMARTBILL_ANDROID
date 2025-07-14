@@ -55,8 +55,6 @@ class _DashboardCarrouselState extends State<DashboardCarrousel> with RouteAware
     final db = await databaseConnection.openDb();
     final response = await db.query('favorites', where: 'userId = ?', whereArgs: [userId]);
 
-    print("Favoritos: $response");
-
     setState(() {
       favorites = response;
     });

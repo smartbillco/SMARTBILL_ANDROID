@@ -58,7 +58,6 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
       
     });
     await getData();
-    print("Currency: $_currentCountry");
   }
 
   Future<void> getAllTransactions() async {

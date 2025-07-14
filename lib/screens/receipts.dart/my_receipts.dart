@@ -164,11 +164,14 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
   //Get all the companies
   Future<void> fetchAllCompanies() async {
 
-    Future.delayed(Duration(milliseconds: 1000), () {
-      List<String> myCompanies = [];
-      _fileContent.forEach((bill) {
-        myCompanies.add(bill['company']);
-      });
+    Future.delayed(const Duration(milliseconds: 1000), () {
+      List<String> myCompanies = [
+        ..._fileContent
+            .map((bill) => bill['company']?.toString().trim() ?? '')
+            .where((company) => company.isNotEmpty)
+            .map((company) => company.toUpperCase()) // normalize for uniqueness
+            .toSet()
+      ];
 
       setState(() {
         companies.addAll(myCompanies);
@@ -212,10 +215,10 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TotalSumWidget(totalColombia: totalColombia, totalPeru: totalPeru, totalPanama: totalPanama),
-            const SizedBox(height: 18),
+            const SizedBox(height: 20),
             
             companies.isEmpty
-            ? Text("No hay compañias todavia...", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),)
+            ? const Text("No hay compañias todavia...", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),)
             : DropdownButton<String>(
               value: selectedValue,
               hint: const Text('Buscar por compañia'),
