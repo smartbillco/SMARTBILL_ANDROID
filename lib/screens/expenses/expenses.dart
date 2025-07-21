@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:smartbill/screens/expenses/expenses_screens/expenses_all.dart';
 import 'package:smartbill/screens/expenses/expenses_screens/expenses_today.dart';
 import 'package:smartbill/screens/expenses/expenses_screens/expenses_week.dart';
+import 'package:smartbill/screens/expenses/voice_recorder/voice_recorder.dart';
 
 class ExpensesScreen extends StatefulWidget {
   const ExpensesScreen({super.key});
@@ -49,6 +50,12 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
             label: 'Todos'
           )
         ]
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          Navigator.push(context, MaterialPageRoute(builder: (context) => const VoiceRecorderScreen()));
+        },
+        child: const Icon(Icons.mic),
       ),
     );
   }
