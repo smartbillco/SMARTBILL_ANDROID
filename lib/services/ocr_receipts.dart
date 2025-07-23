@@ -1,12 +1,15 @@
+import 'dart:io';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:smartbill/services/db.dart';
 
+
 class OcrReceiptsService {
-  final DatabaseConnection databaseConnection = DatabaseConnection();
+  final DatabaseConnection _databaseConnection = DatabaseConnection();
   final String id = FirebaseAuth.instance.currentUser!.uid;
+  
 
   Future<List<Map<String, dynamic>>> fetchOcrReceipts() async {
-    var db = await databaseConnection.openDb();
+    var db = await _databaseConnection.db;
     List<Map<String, dynamic>> ocrList = [];
 
     try {
@@ -45,10 +48,33 @@ class OcrReceiptsService {
   }
 
   Future<void> deleteOcrReceipt(int id) async {
-    var db = await databaseConnection.openDb();
+    try {
+      //DELETE FROM DIRECTORY
+      //Get image directory from databasae
+      var db = await _databaseConnection.db;
+      List<Map<String, dynamic>> imageDB = await db.query('ocr_receipts', where: '_id = ?', whereArgs: [id]);
+      final String imageName = imageDB.first['image'];
+
+      print(imageName);
+      
+      final filePath = imageName;
+      final File imageFile = File(filePath);
+      if (await imageFile.exists()) {
+        await imageFile.delete();
+        print("Deleted file at $filePath");
+      } else {
+        print("File not found at $filePath");
+      }
+      
+      
+      //DELETE FROM DATABASE
+      await db.delete('ocr_receipts', where: '_id = ?', whereArgs: [id]);
+      print("Delete receipt");
+
+    } catch(e) {
+      print("There was an error deliting the image: $e");
+    }
     
-    await db.delete('ocr_receipts', where: '_id = ?', whereArgs: [id]);
-    print("Delete receipt");
   }
 
   Future<String> fetchImage(int id) async {
@@ -58,6 +84,6 @@ class OcrReceiptsService {
       [id],
     );
     return result.first['image'] as String; 
-    }
+  }
 
 }

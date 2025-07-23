@@ -28,8 +28,7 @@ class OcrReceipts {
 
   Future<String> saveOcrReceipt() async {
     try {
-      DatabaseConnection databaseConnection = DatabaseConnection();
-      var db = await databaseConnection.openDb();
+      final Database db = await DatabaseConnection().db;
       int id = await db.insert('ocr_receipts', converTransactionToMap(), conflictAlgorithm: ConflictAlgorithm.replace); 
       return id.toString();
     } catch(e) {

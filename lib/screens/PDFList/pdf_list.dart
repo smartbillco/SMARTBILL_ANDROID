@@ -6,7 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:pdfx/pdfx.dart';
 import 'package:read_pdf_text/read_pdf_text.dart';
 import 'package:smartbill/screens/PDFList/filter/filter.dart';
-import 'package:smartbill/services/pdf.dart';
+import 'package:smartbill/services/pdf_reader.dart';
 
 class PDFListScreen extends StatefulWidget {
   const PDFListScreen({super.key});
@@ -16,11 +16,12 @@ class PDFListScreen extends StatefulWidget {
 }
 
 class _PDFListScreenState extends State<PDFListScreen> {
+  final PdfService pdfService = PdfService();
+
   final currencyFormatter = NumberFormat.currency(locale: 'en_US', symbol: '\$');
   List<File> pdfFiles = [];
   Map<String, ImageProvider> pdfThumbnails = {};
   List<Map<String, dynamic>> extractedText = [];
-  PdfHandler pdfHandler = PdfHandler();
   num totalBills = 0;
   num totalAmount = 0;
   num total = 0;
@@ -187,7 +188,7 @@ String? extractTotalPrice(List<String> textList) {
     String? date = extractDate(lines);
     String? formatTotal = total!.replaceAll('.', '').replaceAll(',', '.');
 
-    parsedPdf = pdfHandler.parseDIANpdf(billNumber, company, date!, formatTotal);
+    parsedPdf = pdfService.parseDIANpdf(billNumber, company, date!, formatTotal);
 
     setState(() {
       totalAmount += double.parse(formatTotal);

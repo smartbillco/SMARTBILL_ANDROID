@@ -27,14 +27,15 @@ class Camera {
 
   Future<String?> saveInDirectory(File? pickedFile) async {
 
-    final directory = await getApplicationDocumentsDirectory();
+    final directory = Platform.isAndroid ?  await getExternalStorageDirectory() : await getApplicationDocumentsDirectory();
 
     // Create the subdirectory 'images'
-    final imagesDir = Directory(p.join(directory.path, 'images'));
+    final imagesDir = Directory(p.join(directory!.path, 'images'));
 
     // Ensure it exists
-    if (!(await imagesDir.exists())) {
+    if (!await imagesDir.exists()) {
       await imagesDir.create(recursive: true);
+      print("Created image folder");
     }
 
     final fileName = p.basename(pickedFile!.path);

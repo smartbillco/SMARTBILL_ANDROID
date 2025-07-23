@@ -2,10 +2,10 @@ import 'package:smartbill/services/db.dart';
 
 class PeruvianBill {
 
-  final DatabaseConnection dbConnection = DatabaseConnection();
+  final DatabaseConnection _databaseConnection = DatabaseConnection();
 
   Future<void> savePeruvianBill(Map<String, Object?> peruvianBill) async {
-    var db = await dbConnection.openDb();
+    var db = await _databaseConnection.db;
 
     try {
       var result = await db.insert('peruvian_bill', peruvianBill);

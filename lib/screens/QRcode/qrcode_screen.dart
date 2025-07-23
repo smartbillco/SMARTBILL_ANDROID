@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:smartbill/screens/QRcode/qrcode_link_screen.dart';
 import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
 import 'package:smartbill/services/colombian_bill.dart';
-import 'package:smartbill/services/pdf.dart';
+import 'package:smartbill/services/qr_handler.dart';
 import 'package:smartbill/services/peruvian_bill.dart';
 
 
@@ -18,7 +18,7 @@ class QrcodeScreen extends StatefulWidget {
 class _QrcodeScreenState extends State<QrcodeScreen> {
   ColombianBill colombianBill = ColombianBill();
   PeruvianBill peruvianBill = PeruvianBill();
-  PdfHandler pdfHandler = PdfHandler();
+  QRBillHandler qrBillHandler = QRBillHandler();
   bool isColombia = false;
   bool isPeru =  false;
   Map<String, Object?> pdfContent = {};
@@ -37,14 +37,14 @@ class _QrcodeScreenState extends State<QrcodeScreen> {
       setState(() {
         isColombia = false;
         isPeru = true;
-        pdfContent = pdfHandler.parseQrPeru(widget.qrResult);
+        pdfContent = qrBillHandler.parseQrPeru(widget.qrResult);
       });
 
     } else if(widget.qrResult.contains('NumFac')) {
       setState(() {
         isPeru = false;
         isColombia = true;
-        pdfContent = pdfHandler.parseQrColombia(widget.qrResult);
+        pdfContent = qrBillHandler.parseQrColombia(widget.qrResult);
         
       });
     } else {

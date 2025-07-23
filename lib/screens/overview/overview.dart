@@ -43,9 +43,9 @@ class _OverviewScreenState extends State<OverviewScreen> {
     return PageView(
       controller: _pageController,
       physics: const AlwaysScrollableScrollPhysics(),
-      children: [
-        const DashboardScreen(),
-        const ReportsScreen()
+      children: const [
+        DashboardScreen(),
+        ReportsScreen()
       ],
     );
   }

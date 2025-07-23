@@ -5,12 +5,19 @@ import 'package:smartbill/screens/splash/splash.dart';
 import 'package:smartbill/services/auth.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:smartbill/services/crypto_provider.dart';
+import 'package:smartbill/services/db.dart';
 import 'package:smartbill/services/settings.dart';
 import './route_observer.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  //Init and return database
+  await DatabaseConnection().db;
+
+  //Init Downloader
   await FlutterDownloader.initialize();
+
+  //Init firebase
   await Firebase.initializeApp();
   runApp(
     MultiProvider(

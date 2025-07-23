@@ -19,13 +19,10 @@ class _BackupWidgetState extends State<BackupWidget> {
 
       try {
         await backupService.initBackupDir();
-        final String dianBackupResponse = await backupService.saveDianPdfsBackup();
-        final String xmlBackupResponse = await backupService.saveXmlBackup();
-        final String pdfBackupResponse = await backupService.savePdfBackup();
-        final String imageBackupResponse = await backupService.saveImageBackup();
+        final backupResposne = await backupService.backupFilesFolder();
         await backupService.backupDatabase();
 
-        if(dianBackupResponse == 'success' || xmlBackupResponse == 'success' || pdfBackupResponse == 'success' || imageBackupResponse == 'success' ) {
+        if(backupResposne == 'success') {
             for(var i = 0; i <= 4; i++) {
               await Future.delayed(Duration(seconds: 1), () {
                 setState(() {
@@ -44,7 +41,7 @@ class _BackupWidgetState extends State<BackupWidget> {
 
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Se guardo la copia de seguridad")));
 
-        } else if (dianBackupResponse == "folder vacio" && xmlBackupResponse == "folder vacio" && pdfBackupResponse == "folder vacio" && imageBackupResponse == "folder vacio") {
+        } else if (backupResposne == 'no files') {
           
           setState(() {
             _isDownloading = false;
