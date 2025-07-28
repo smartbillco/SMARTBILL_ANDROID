@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:smartbill/models/ocr_receipts.dart';
+import 'package:smartbill/screens/overview/overview.dart';
 import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
 import 'package:smartbill/services/camera.dart';
 
@@ -36,6 +37,7 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
   void initState() {
     super.initState();
     _extractData();
+    print("Loaded page");
   }
 
   String normalizeMoney(String raw) {
@@ -79,8 +81,8 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
       try {
         List<String> extractedLines = widget.recognizedText!.split('\n');
 
-        RegExp dateRegex = RegExp(r'\b(\d{2}[/-]\d{2}[/-]\d{2,4}|\d{4}[/-]\d{2}[/-]\d{2})\b');
-        RegExp nitRegex = RegExp(r'NIT[:\s.\-]*?([\d.]+-\d+|\d+)', caseSensitive: false);
+        RegExp dateRegex = RegExp(r'\b(\d{1,4})\s*[-/.]\s*(\d{1,2})\s*[-/.]\s*(\d{2,4})\b');
+        RegExp nitRegex = RegExp(r'NIT[:\s.\-]*?((?:\d[\s.]*){6,}\d(?:-\d)?)', caseSensitive: false);
         RegExp ccRegex = RegExp(r'C\.?C\.?[:\s.\-]*?(\d[\d.]*)', caseSensitive: false);
         RegExp unlabeledNitRegex = RegExp(r'\b\d{9}(-\d)?\b');
         RegExp moneyRegex = RegExp(r'\b\d{1,3}(?:[\s.,]\s?\d{3})+(?:[\s.,]\s?\d{2})?\b(?!\s*-\d)');
@@ -143,6 +145,8 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
             ? moneyValues.reduce((a, b) => a > b ? a : b)
             : 0;
 
+        
+
         setState(() {
           date = dates.isEmpty ? 'No encontrado' : dates.last;
           nit = nitValues.firstOrNull ?? '';
@@ -151,19 +155,31 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
           company = companyName;
   
 
-          if (nit.isEmpty || nit.length < 8 || total < 1000) {
+          if (nit.isEmpty || nit.length < 8 ) {
             // Safe to show UI feedback now
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Parece que el contenido está incompleto o no es una factura válida.')),
+                const SnackBar(content: Text('Parece que no se encontro NIT valido')),
               );
-              Navigator.pop(context);
+              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const OverviewScreen()), (r) => false);
             }
              
+          } else if(total < 1000) {
+
+            // Safe to show UI feedback now
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Parece que la factura no tiene la informacion completa')),
+              );
+              Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const OverviewScreen()), (r) => false);
+            }
+            
           } else {
             ocrLines = extractedLines;
           }
         });
+
+        print("Nit: $nit, Date: $date, cliente: $customer, precio> $totalAmount");
 
       } catch (e) {
         // Safe to show UI feedback now
@@ -171,7 +187,7 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Parece que el contenido está incompleto o no es una factura válida.')),
           );
-          Navigator.pop(context);
+          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const OverviewScreen()), (r) => false);
         }
       }
     });
@@ -286,7 +302,7 @@ Row receiptRow(String type, dynamic value) {
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
       Text("$type: ", style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
-      Text(value.toString(), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400))
+      Flexible(child: Text(value.length > 20 ? value.toString().substring(0, 20) : value.toString(), textAlign: TextAlign.right, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w400)))
     ],
   );
 }
