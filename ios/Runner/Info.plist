@@ -29,6 +29,8 @@
 	<string>Smartbill</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Necesitamos acceso a tu microfono para grabar tu nueva transaccion.</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>NSAllowsArbitraryLoads</key>
