@@ -11,7 +11,7 @@ class OverviewScreen extends StatefulWidget {
 
 class _OverviewScreenState extends State<OverviewScreen> {
   late PageController _pageController;
-  int _currentPage = 0;
+  int currentPage = 0;
 
   void changePage(int index) {
     _pageController.animateToPage(
@@ -20,7 +20,7 @@ class _OverviewScreenState extends State<OverviewScreen> {
       curve: Curves.easeInOut,
     );
     setState(() {
-      _currentPage = index;
+      currentPage = index;
     });
   }
 

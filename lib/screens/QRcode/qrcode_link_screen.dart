@@ -1,11 +1,12 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:smartbill/screens/PDFList/pdf_list.dart';
 import 'package:smartbill/screens/QRcode/confirmDownload/confirm_download.dart';
+import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
 
 class QrcodeLinkScreen extends StatefulWidget {
   final String? uri; 
@@ -94,7 +95,88 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
 
       showSnackbar("Ha ocurrido un problema con el PDF");
     } finally {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const PDFListScreen()));
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const ReceiptScreen()));
+    }
+  }
+
+  Future<void> _downloadPdf(String url) async {
+    // Get cookies from current WebView session
+    final cookies = await CookieManager().getCookies(url: WebUri(url));
+    final cookieHeader = cookies.map((c) => "${c.name}=${c.value}").join("; ");
+
+    setState(() {
+      isLoading = true;
+    });
+    
+    
+    String fileName = "invoice_${DateTime.now().millisecondsSinceEpoch}.pdf";
+
+    // Make HTTP request with cookies
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {"Cookie": cookieHeader},
+    );
+
+    if (response.statusCode == 200) {
+      final dir = Platform.isAndroid ?  await getExternalStorageDirectory() : await getApplicationDocumentsDirectory();
+      final path = "${dir!.path}/invoices/$fileName";
+      final file = File(path);
+      await file.writeAsBytes(response.bodyBytes);
+      print("PDF saved at $path");
+    } else {
+      print("Download failed: ${response.statusCode}");
+    }
+
+     setState(() {
+      isLoading = true;
+    });
+
+    showSnackbar("Se ha descargado la factura");
+    Navigator.pop(context);
+        
+    Navigator.push(context, MaterialPageRoute(builder: (context) => const ReceiptScreen()));
+
+
+  }
+
+  Future<void> downloadPdfDian(String downloadUrl) async {
+    setState(() {
+      isLoading = true;
+    });
+    
+    final dir = Platform.isAndroid ?  await getExternalStorageDirectory() : await getApplicationDocumentsDirectory(); // Returns app's external storage
+    final path = "${dir!.path}/invoices";
+    final dirPath = Directory(path);
+    
+    if(!await dirPath.exists()) {
+      await Directory(path).create(recursive: true);
+    }
+    
+    String fileName = "invoice_${DateTime.now().millisecondsSinceEpoch}.pdf";
+
+    try {
+      await FlutterDownloader.enqueue(
+        url: downloadUrl,
+        savedDir: path,
+        fileName: fileName,
+        showNotification: true,
+        openFileFromNotification: true,
+      );
+
+      await Future.delayed(const Duration(seconds: 6), () {
+        setState(() {
+          isLoading = false;
+        });
+
+        showSnackbar("Se ha descargado la factura");
+        Navigator.pop(context);
+        
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const ReceiptScreen()));
+      });
+
+    } catch (e) {
+
+      showSnackbar("Ha ocurrido un problema con el PDF");
     }
   }
 
@@ -123,28 +205,10 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
           onWebViewCreated: (controller) {
             webViewController = controller;
           },
-          onLoadStart: (controller, url) {
-            if(!hasCheckedUrl && url != null) {
-              hasCheckedUrl = true;
-              validateIfQRContainsCufe(Uri.parse(url.toString()));
-            }
-            if(url.toString().contains('ShowDocument')) {
-              cloudflarePassed = true;
-              print("URL: ${url.toString()}");
-            } else {
-              cloudflarePassed = false;
-            }
-            originalUrl ??= url.toString();
-            
-          },
-          onUpdateVisitedHistory: (controller, url, isReload) {
-            if(originalUrl != null && originalUrl != url.toString() && !hasNavigated && cloudflarePassed) {
-              hasNavigated = true;
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ConfirmDownloadScreen(url: url.toString())));
-            }
-          },
-          onDownloadStartRequest: (controller, request) {
-            print("Download: ${request.url.toString()}");
+          onDownloadStartRequest: (controller, request) async {
+            final String url = request.url.toString();
+            print("Download: $url");
+            await _downloadPdf(url);
             
           },
         ),
