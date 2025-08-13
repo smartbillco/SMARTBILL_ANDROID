@@ -31,6 +31,8 @@
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Necesitamos acceso a tu microfono para grabar tu nueva transaccion.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Esta aplicacion necesita accesso al reconocimiento de voz para grabar transacciones.</string>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>NSAllowsArbitraryLoads</key>
@@ -42,7 +44,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.0.22</string>
+	<string>1.0.23</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
 	<key>CFBundleURLTypes</key>
@@ -57,13 +59,11 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>27</string>
+	<string>28</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Necesitamos acceso a la cámara para capturar fotos de tus facturas</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Necesitamos acceso a tu microfono</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Necesitamos permiso para acceder a tus facturas.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

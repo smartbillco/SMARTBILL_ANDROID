@@ -68,8 +68,7 @@ dependencies:
   fl_chart: ^0.66.2
   flutter_animate: ^4.5.2
   image_cropper: ^9.1.0
-  record: ^6.0.0
-  
+  speech_to_text: 7.0.0
 
 dev_dependencies:
   flutter_test:

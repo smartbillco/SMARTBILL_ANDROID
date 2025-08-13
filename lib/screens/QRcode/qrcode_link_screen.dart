@@ -2,8 +2,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
+import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
+import 'package:smartbill/screens/PDFList/pdf_list.dart';
+import 'package:smartbill/screens/QRcode/confirmDownload/confirm_download.dart';
 import 'package:smartbill/screens/dashboard/dashboard.dart';
+import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
 
 class QrcodeLinkScreen extends StatefulWidget {
   final String? uri; 
@@ -94,6 +98,128 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
   } 
 
 
+  Future<void> downloadElectronicBill(String downloadUrl) async {
+    setState(() {
+      isLoading = true;
+    });
+                
+    final dir = await getExternalStorageDirectory(); // Returns app's external storage
+    final path = "${dir!.path}/invoices";
+    await Directory(path).create(recursive: true);
+
+    String fileName = "invoice_${DateTime.now().millisecondsSinceEpoch}.pdf";
+
+    try {
+      await FlutterDownloader.enqueue(
+        url: downloadUrl,
+        savedDir: path,
+        fileName: fileName,
+        showNotification: true,
+        openFileFromNotification: true,
+       );
+
+      showSnackbar("Se esta descargando la factura");
+
+      await Future.delayed(const Duration(seconds: 6), () {
+        setState(() {
+          isLoading = false;
+        });
+
+        showSnackbar("Se ha descargado la factura");
+        Navigator.pop(context);
+            
+        });
+
+      } catch (e) {
+
+      showSnackbar("Ha ocurrido un problema con el PDF");
+    } finally {
+      Navigator.push(context, MaterialPageRoute(builder: (context) => const ReceiptScreen()));
+    }
+  }
+
+  Future<void> _downloadPdf(String url) async {
+    // Get cookies from current WebView session
+    final cookies = await CookieManager().getCookies(url: WebUri(url));
+    final cookieHeader = cookies.map((c) => "${c.name}=${c.value}").join("; ");
+
+    setState(() {
+      isLoading = true;
+    });
+    
+    
+    String fileName = "invoice_${DateTime.now().millisecondsSinceEpoch}.pdf";
+
+    // Make HTTP request with cookies
+    final response = await http.get(
+      Uri.parse(url),
+      headers: {"Cookie": cookieHeader},
+    );
+
+    if (response.statusCode == 200) {
+      final dir = Platform.isAndroid ?  await getExternalStorageDirectory() : await getApplicationDocumentsDirectory();
+      final path = "${dir!.path}/invoices/$fileName";
+      final file = File(path);
+      await file.writeAsBytes(response.bodyBytes);
+      print("PDF saved at $path");
+    } else {
+      print("Download failed: ${response.statusCode}");
+    }
+
+     setState(() {
+      isLoading = true;
+    });
+
+    showSnackbar("Se ha descargado la factura");
+    Navigator.pop(context);
+        
+    Navigator.push(context, MaterialPageRoute(builder: (context) => const ReceiptScreen()));
+
+
+  }
+
+  Future<void> downloadPdfDian(String downloadUrl) async {
+    setState(() {
+      isLoading = true;
+    });
+    
+    final dir = Platform.isAndroid ?  await getExternalStorageDirectory() : await getApplicationDocumentsDirectory(); // Returns app's external storage
+    final path = "${dir!.path}/invoices";
+    final dirPath = Directory(path);
+    
+    if(!await dirPath.exists()) {
+      await Directory(path).create(recursive: true);
+    }
+    
+    String fileName = "invoice_${DateTime.now().millisecondsSinceEpoch}.pdf";
+
+    try {
+      await FlutterDownloader.enqueue(
+        url: downloadUrl,
+        savedDir: path,
+        fileName: fileName,
+        showNotification: true,
+        openFileFromNotification: true,
+      );
+
+      await Future.delayed(const Duration(seconds: 6), () {
+        setState(() {
+          isLoading = false;
+        });
+
+        showSnackbar("Se ha descargado la factura");
+        Navigator.pop(context);
+        
+        Navigator.push(context, MaterialPageRoute(builder: (context) => const ReceiptScreen()));
+      });
+
+    } catch (e) {
+
+      showSnackbar("Ha ocurrido un problema con el PDF");
+    }
+  }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -104,39 +230,27 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 35),
-        child: InAppWebView(
-            initialUrlRequest: URLRequest(
-              url: WebUri(widget.uri!),
-            ),
-            initialSettings: InAppWebViewSettings(
-              javaScriptEnabled: true,
-              useOnDownloadStart: true,
-              allowFileAccess: true,
-              allowContentAccess: true,
-              useHybridComposition: true,
-            ),
-            onWebViewCreated: (controller) {
-              webViewController = controller;
-              print("WebView Created");
-            },
-            onLoadStop: (controller, url) async {
-              if(!hasCheckedUrl && url != null) {
-                hasCheckedUrl = true;
-                validateIfQRContainsCufe(Uri.parse(url.toString()));
-              }
-              print("Loaded: $url");
-            },
-            onUpdateVisitedHistory: (controller, url, androidIsReload) async {
-              final link = url.toString();
-              print("Link message: $url");
-              if (Platform.isIOS && link.contains("https://catalogo-vpfe.dian.gov.co/Document/DownloadPDF?trackId")) {
-                await _startDownload(link);
-              }
-            },
-            onReceivedHttpError: (controller, request, errorResponse) {
-              
-            },
+        child: isLoading
+        ? const Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [CircularProgressIndicator(), SizedBox(height: 10,), Text("Descargando archivo...")]))
+        : InAppWebView(
+          initialSettings: InAppWebViewSettings(
+            javaScriptEnabled: true,
+            useOnDownloadStart: true,
+            allowFileAccess: true,
+            allowContentAccess: true,
+            useHybridComposition: true,
           ),
+          initialUrlRequest: URLRequest(url: WebUri(widget.uri!)),
+          onWebViewCreated: (controller) {
+            webViewController = controller;
+          },
+          onDownloadStartRequest: (controller, request) async {
+            final String url = request.url.toString();
+            print("Download: $url");
+            await _downloadPdf(url);
+            
+          },
+        ),
       ),
     );
   }

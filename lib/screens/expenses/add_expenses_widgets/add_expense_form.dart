@@ -45,9 +45,9 @@ class _AddExpensesFormState extends State<AddExpensesForm> {
 
     double amount = double.parse(formattedAmount);
    
-    Transaction income = Transaction(userId: userId, amount: amount, date: date, description: _descriptionController.text, category: _selectedCategory!, type: 'expense');
+    Transaction expense = Transaction(userId: userId, amount: amount, date: date, description: _descriptionController.text, category: _selectedCategory!, type: 'expense');
 
-    await income.saveNewTransaction();
+    await expense.saveNewTransaction();
 
     Navigator.pop(context);
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ExpensesScreen()));
