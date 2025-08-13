@@ -51,6 +51,8 @@ class _VoiceRecorderScreenState extends State<VoiceRecorderScreen> {
 
     bool isExpense = expense.any((word) => text.contains(word));
 
+    print("Type: $isExpense");
+
     return isExpense ? "expense" : "income";
   }
 
@@ -124,9 +126,9 @@ class _VoiceRecorderScreenState extends State<VoiceRecorderScreen> {
     
     String date = DateFormat('yyyy-MM-dd').format(DateTime.now());
    
-    Transaction income = Transaction(userId: userId, amount: amount, date: date, description: description, category: category, type: 'income');
+    Transaction transaction = Transaction(userId: userId, amount: amount, date: date, description: description, category: category, type: type);
 
-    await income.saveNewTransaction();
+    await transaction.saveNewTransaction();
 
     Navigator.pop(context);
     Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ExpensesScreen()));
