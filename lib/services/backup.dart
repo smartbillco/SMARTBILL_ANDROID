@@ -1,5 +1,4 @@
 import 'dart:io';
-import 'package:archive/archive.dart';
 import 'package:path/path.dart' as p;
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
@@ -7,7 +6,6 @@ import 'package:sqflite/sqflite.dart';
 
 class BackupService {
   late Directory backupDir;
-  final archive = Archive();
 
   Future<void> initBackupDir() async {
 
@@ -80,23 +78,23 @@ class BackupService {
     
   }
 
-
-  //Get database dir
-  Future<String> getDatabasePath() async {
-    final databasesPath = await getDatabasesPath();
-    final path = join(databasesPath, 'smartbill.db'); // change to your actual db name
-    return path;
-  }
-
   Future<void> backupDatabase() async {
     try {
-      final dbPath = await getDatabasePath();
+
+      final databasesPath = await getDatabasesPath();
+      final dbPath = join(databasesPath, 'smartbill.db');   
+
       final dbFile = File(dbPath);
       final backupPath = join(backupDir.path, 'smartbill.db');
 
-      await dbFile.copy(backupPath);
+      // 5. Copy the DB file if it exists
 
-      print('✅ Backup successful: ${backupDir.path}');
+      if (await dbFile.exists()) {
+        await dbFile.copy(backupPath);
+        print('✅ Database backup created at: $backupPath');
+      } else {
+        print('❌ Database file not found at $dbPath');
+      }
     } catch (e) {
       print('❌ Backup failed: $e');
     }

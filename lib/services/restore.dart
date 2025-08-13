@@ -7,23 +7,30 @@ import 'package:sqflite/sqflite.dart';
 
 class RestoreService {
 
-  final backupDir = "/storage/emulated/0/Download/smartbill_backup";
+  late Directory backupDir;
 
   Future<bool> checkIfBackupExists() async {
-    final File backupFolder = File(backupDir);
 
-    if(!await backupFolder.exists()) {
-      return false;
+    //If the smartbill folder doesn't exist, creates it
+    if (Platform.isAndroid) {
+      backupDir = Directory("/storage/emulated/0/Download/smartbill_backup");
+    } else if (Platform.isIOS) {
+      final docsDir = await getApplicationDocumentsDirectory();
+      backupDir = Directory(p.join(docsDir.path, 'smartbill_backup'));
     }
 
-    return true;
+    if(await backupDir.exists()) {
+      return true;
+    } else {
+      return false;
+    }
 
   }
 
   Future<String> _restoreDatabaseBackup() async {
 
     try {
-      File backupFile = File("$backupDir/smartbill.db");
+      File backupFile = File("${backupDir.path}/smartbill.db");
 
       if (!await backupFile.exists()) {
         return "Backup database vacio";
@@ -32,6 +39,8 @@ class RestoreService {
       //Get old database
       final databasePath = await getDatabasesPath();
       final targetPath = p.join(databasePath, 'smartbill.db');
+
+      print("Databases dir: $targetPath");
 
       final targetFile = File(targetPath);
 
@@ -48,7 +57,7 @@ class RestoreService {
 
 
     } catch(e) {
-      print(e);
+      print("Hubo un error: e");
       return "Error: $e";
     }
     
@@ -56,7 +65,7 @@ class RestoreService {
 
   Future<String> _restoreBackupFolder() async {
     final directory = Platform.isAndroid ? await getExternalStorageDirectory() : await getApplicationDocumentsDirectory();
-    final Directory backupDirectory = Directory(backupDir);
+    final Directory backupDirectory = Directory(backupDir.path);
 
     print("Restoring backup to ${directory!.path}");
 

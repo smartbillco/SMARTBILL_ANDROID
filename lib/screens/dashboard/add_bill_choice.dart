@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:smartbill/screens/dashboard/display_image.dart';
+import 'package:smartbill/screens/overview/overview.dart';
 import 'package:smartbill/services/camera.dart';
 import 'package:smartbill/services/crop_image.dart';
 import 'package:smartbill/services/pdf_reader.dart';
@@ -106,32 +107,35 @@ class _AddBillChoiceState extends State<AddBillChoice> {
 
 
   //Pick and crop from gallery
-  Future<void> _pickImage() async {
-    final pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
+  Future<void> _pickImage() async { 
 
-    if(pickedImage != null) {
-      final image = File(pickedImage.path);
+    try {
+      final pickedImage = await ImagePicker().pickImage(source: ImageSource.gallery);
 
-      final String recognizedText = await cameraService.extractTextFromImage(pickedImage as XFile?);
+          if(pickedImage != null) {
+            final image = File(pickedImage.path);
 
-      final File? croppedImage = await cropImageService.cropImage(image);
+            final String recognizedText = await cameraService.extractTextFromImage(pickedImage as XFile?);
 
-      print(croppedImage!.path);
+            final croppedImage = await cropImageService.cropImage(image);
 
+            if(recognizedText == 'error') {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Parece que la imagen no contiene información completa o no es una factura")));
+              Navigator.pop(context);
+            } else {
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: croppedImage, recognizedText: recognizedText)));
 
-      if(recognizedText == 'error') {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Parece que la imagen no contiene información completa o no es una factura")));
-        Navigator.pop(context);
-      } else {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: croppedImage, recognizedText: recognizedText)));
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: croppedImage, recognizedText: recognizedText)));
+            }
 
-      }
-
-      
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("No se selecciono imagen")));
+            
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("No se selecciono imagen")));
+          }
+    } catch(e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Parece que la imagen no tiene un formato valido")));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OverviewScreen()));
     }
+    
 
   }
 
@@ -150,9 +154,8 @@ class _AddBillChoiceState extends State<AddBillChoice> {
 
     if(recognizedText == 'error') {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Parece que la imagen no contiene información completa o no es una factura")));
-      Navigator.pop(context);
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OverviewScreen()));
     } else {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: croppedImage, recognizedText: recognizedText)));
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: croppedImage, recognizedText: recognizedText)));
 
     }
