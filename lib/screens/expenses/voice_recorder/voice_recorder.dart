@@ -5,6 +5,7 @@ import 'package:smartbill/models/transaction.dart';
 import 'package:smartbill/screens/expenses/expenses.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:lottie/lottie.dart';
 
 class VoiceRecorderScreen extends StatefulWidget {
   const VoiceRecorderScreen({super.key});
@@ -84,7 +85,7 @@ class _VoiceRecorderScreenState extends State<VoiceRecorderScreen> {
   String obtenerCategorias(String text, String type) {
     final Map<String, List> catExpense = {
       'Mercado': ['mercado', 'supermercado', 'compras de comida'],
-      'Alimentacion': ['almuerzo', 'cena', 'desayuno', 'comida', 'restaurante', 'cafetería', 'alimentación'],
+      'Alimentación': ['almuerzo', 'cena', 'desayuno', 'comida', 'restaurante', 'cafetería', 'alimentación'],
       'Arriendo': ['arriendo', 'alquiler', 'apartamento', 'local'],
       'Servicios': ['agua', 'luz', 'gas', 'internet', 'teléfono', 'telefono'],
       'Transporte': ['bus', 'taxi', 'uber', 'didi', 'metro', 'gasolina', 'peaje', 'carro', 'auto'],
@@ -101,7 +102,6 @@ class _VoiceRecorderScreenState extends State<VoiceRecorderScreen> {
       'Itro': []
     };
 
-    final categories = type == 'expense' ? catExpense : catIncome;
 
     // Dividimos en palabras
     final words = text.split(RegExp(r'\s+'));
@@ -182,16 +182,17 @@ class _VoiceRecorderScreenState extends State<VoiceRecorderScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text("Grabar una nueva transacción"),
+              stt.isListening ? Lottie.asset('assets/sound_waves.json', width: 250) : SizedBox.square(),
+              const Text("Grabar una nueva transacción"),
               const SizedBox(height: 30),
-              IconButton(
-                padding: EdgeInsets.all(16),
+              TextButton.icon(
+                label: stt.isListening ? const Text("Dejar de grabar", style: TextStyle(color: Colors.white),) : Text("Comenzar a grabar", style: TextStyle(color: Colors.white)),
                 onPressed: stt.isListening ? _stopRecording : _startRecording,
-                icon: Icon(stt.isListening ? Icons.mic_off : Icons.mic),
+                icon: Icon(stt.isListening ? Icons.mic_off : Icons.mic, size: 30, color: Colors.white,),
                 style: ButtonStyle(
                     backgroundColor: WidgetStatePropertyAll(
                         stt.isListening ? Colors.red : Colors.green)),
-                iconSize: 30,
+  
               ),
               _lastWords.isEmpty
                   ? SizedBox.shrink()

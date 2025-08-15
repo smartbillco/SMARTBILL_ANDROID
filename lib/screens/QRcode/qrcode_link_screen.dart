@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
@@ -18,7 +19,7 @@ class QrcodeLinkScreen extends StatefulWidget {
 }
 
 class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
-  late InAppWebViewController webViewController;
+  InAppWebViewController? webViewController;
   bool isLoading = false;
   bool cloudflarePassed = false;
   bool hasCheckedUrl = false;
@@ -39,42 +40,6 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
     final snackbar = SnackBar(content: Text(content));
 
     ScaffoldMessenger.of(context).showSnackBar(snackbar);
-  }
-
-  Future<void> _startDownload(String url) async {
-
-    final dir = Platform.isAndroid ?  await getExternalStorageDirectory() : await getApplicationDocumentsDirectory();
-
-    final pathDir = Directory("${dir!.path}/invoices");
-
-    if(!await pathDir.exists()) {
-      await Directory("${dir.path}/invoices").create(recursive: true);
-    }
-
-    try {
-        await FlutterDownloader.enqueue(
-          url: url,
-          savedDir: pathDir.path,
-          fileName: 'Invoice_${DateTime.now().millisecondsSinceEpoch}.pdf',
-          showNotification: true,
-          openFileFromNotification: true,
-        );
-
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Descargando factura...")));
-
-        await Future.delayed(Duration(seconds: 5), () async {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Factura descargada en PDFs DIAN")));
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const DashboardScreen()));
-        });
-
-    } catch(e) {
-
-      print("Error: $e");
-
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Hubo un problema con la descarga: $e")));
-
-    }
-
   }
 
    bool checkIfUrlIsDian(String url) {
@@ -138,45 +103,6 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
     }
   }
 
-  Future<void> _downloadPdf(String url) async {
-    // Get cookies from current WebView session
-    final cookies = await CookieManager().getCookies(url: WebUri(url));
-    final cookieHeader = cookies.map((c) => "${c.name}=${c.value}").join("; ");
-
-    setState(() {
-      isLoading = true;
-    });
-    
-    
-    String fileName = "invoice_${DateTime.now().millisecondsSinceEpoch}.pdf";
-
-    // Make HTTP request with cookies
-    final response = await http.get(
-      Uri.parse(url),
-      headers: {"Cookie": cookieHeader},
-    );
-
-    if (response.statusCode == 200) {
-      final dir = Platform.isAndroid ?  await getExternalStorageDirectory() : await getApplicationDocumentsDirectory();
-      final path = "${dir!.path}/invoices/$fileName";
-      final file = File(path);
-      await file.writeAsBytes(response.bodyBytes);
-      print("PDF saved at $path");
-    } else {
-      print("Download failed: ${response.statusCode}");
-    }
-
-     setState(() {
-      isLoading = true;
-    });
-
-    showSnackbar("Se ha descargado la factura");
-    Navigator.pop(context);
-        
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const ReceiptScreen()));
-
-
-  }
 
   Future<void> downloadPdfDian(String downloadUrl) async {
     setState(() {
@@ -219,8 +145,6 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
 
@@ -244,11 +168,15 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
           onWebViewCreated: (controller) {
             webViewController = controller;
           },
-          onDownloadStartRequest: (controller, request) async {
-            final String url = request.url.toString();
-            print("Download: $url");
-            await _downloadPdf(url);
-            
+          shouldInterceptRequest: (controller, request) async {
+            final url = request.url.toString();
+            if(url.contains('Document/DownloadPDF')) {
+              await downloadPdfDian(url);
+
+            } else {
+              print("Not detected yet");
+            }
+            return Future.value(null);
           },
         ),
       ),

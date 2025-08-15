@@ -10,7 +10,7 @@ import 'package:smartbill/services/settings.dart';
 import './route_observer.dart';
 
 Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsFlutterBinding.ensureInitialized(); 
   //Init and return database
   await DatabaseConnection().db;
 

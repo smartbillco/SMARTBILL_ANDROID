@@ -37,7 +37,7 @@ class _DashboardContainerState extends State<DashboardContainer> {
           const DashboardText(),
           //Carrousel
           const DashboardCarrousel(),
-          SizedBox(height: 5),
+          const SizedBox(height: 5),
           //First row of navigation
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
