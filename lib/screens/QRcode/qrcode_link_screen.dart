@@ -168,15 +168,14 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
           onWebViewCreated: (controller) {
             webViewController = controller;
           },
-          shouldInterceptRequest: (controller, request) async {
-            final url = request.url.toString();
+          shouldOverrideUrlLoading: (controller, request) async {
+            final url = request.request.url.toString();
             if(url.contains('Document/DownloadPDF')) {
               await downloadPdfDian(url);
+              return NavigationActionPolicy.CANCEL;
 
-            } else {
-              print("Not detected yet");
-            }
-            return Future.value(null);
+            } 
+            return NavigationActionPolicy.ALLOW;
           },
         ),
       ),

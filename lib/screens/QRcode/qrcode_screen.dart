@@ -106,8 +106,8 @@ class _QrcodeScreenState extends State<QrcodeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             pdfContent.isEmpty
-            ? Padding(padding: const EdgeInsets.all(30.0), child: Text("Factura no válida, por favor intente con otra factura", style: TextStyle(fontSize: 18),))
-            :  Expanded(
+            ? const Padding(padding: EdgeInsets.all(30.0), child: Text("Factura no válida, por favor intente con otra factura", style: TextStyle(fontSize: 18),))
+            : Expanded(
                 child: isColombia
                 ? _cardColombia(pdfContent, context, saveNewColombianBill)
                 : _cardPeru(pdfContent, context, saveNewPeruvianBill),
