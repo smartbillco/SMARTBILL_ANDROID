@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smartbill/screens/QRcode/qrcode_link_screen.dart';
 import 'package:smartbill/screens/dashboard/dashboard_widgets/dashboard_carrousel.dart';
 import 'package:smartbill/screens/expenses/expenses.dart';
 import 'package:smartbill/screens/dashboard/add_bill_choice.dart';

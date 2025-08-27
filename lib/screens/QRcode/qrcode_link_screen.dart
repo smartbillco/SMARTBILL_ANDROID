@@ -2,11 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_inappwebview/flutter_inappwebview.dart';
-import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:smartbill/screens/PDFList/pdf_list.dart';
-import 'package:smartbill/screens/QRcode/confirmDownload/confirm_download.dart';
-import 'package:smartbill/screens/dashboard/dashboard.dart';
 import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
 
 class QrcodeLinkScreen extends StatefulWidget {
@@ -61,41 +57,6 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
     } 
   } 
 
-
-  Future<bool> isDownloadLink(String url) async {
-    try {
-      final response = await http.head(Uri.parse(url));
-
-      if (response.statusCode == 200) {
-          // Check Content-Disposition header
-          final contentDisposition = response.headers['content-disposition'];
-          if (contentDisposition != null && contentDisposition.contains('attachment')) {
-            return true; // Server explicitly suggests download
-          }
-
-          // Check Content-Type header for common download file types
-          final contentType = response.headers['content-type'];
-          if (contentType != null) {
-            // Example: check for common binary types or archives
-            if (contentType.contains('application/octet-stream') ||
-                contentType.contains('application/zip') ||
-                contentType.contains('application/pdf') ||
-                contentType.contains('image/') // Consider images as downloadable if desired
-                // Add more content types as needed
-            ) {
-              return true;
-            }
-          }
-        }
-        return false; 
-
-    } catch(e) {
-      print('Error checking URL: $e');
-      return false;
-
-    }
-
-  }
 
   Future<void> downloadPdfDian(String downloadUrl) async {
     setState(() {
@@ -162,15 +123,14 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
             webViewController = controller;
             originalUrl = widget.uri;
           },
-          shouldInterceptRequest: (controller, request) async {
-            final url = request.url.toString();
+          shouldOverrideUrlLoading: (controller, request) async {
+            final url = request.request.url.toString();
             if(url.contains('Document/DownloadPDF')) {
               await downloadPdfDian(url);
+              return NavigationActionPolicy.CANCEL;
 
-            } else {
-              print("Not detected yet");
-            }
-            return Future.value(null);
+            } 
+            return NavigationActionPolicy.ALLOW;
           },
           onDownloadStartRequest: (controller, request) {
             final String url = request.url.toString();
