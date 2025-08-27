@@ -51,8 +51,11 @@ class _PDFListScreenState extends State<PDFListScreen> {
     String value = "Número de Factura";
     for (String text in pdfLines) { 
       if(text.toLowerCase().contains(value.toLowerCase())) {
-        String subtring = text.substring(21,33);
-        return subtring;
+        String substring = text.substring(21,32);
+        return substring;
+      } else if(text.toLowerCase().contains('NIT'.toLowerCase())) {
+        String substring = text;
+        return substring;
       }
     }
 
@@ -69,7 +72,6 @@ class _PDFListScreenState extends State<PDFListScreen> {
         }
           String subtring = text.substring(14,);
           return subtring;
-        
       }
       
     }
@@ -93,15 +95,26 @@ class _PDFListScreenState extends State<PDFListScreen> {
 String? extractTotalPrice(List<String> textList) {
   // Regex pattern to find "COP $" followed by any text
   RegExp pattern = RegExp(r'(?<=COP \$)\s*\S+');
+  final regex = RegExp(r'TOTAL A PAGAR\s*\$?\s*([\d.,]+)', caseSensitive: false);
+  
 
   for (String text in textList) {
     RegExpMatch? match = pattern.firstMatch(text);
+    final matchTotal = regex.firstMatch(text);
+
     if (match != null) {
       return match.group(0); // Return the first matched text
+    } else if (matchTotal != null) {
+    
+      String value = matchTotal.group(1) ?? "";
+
+      return value;
     }
+      
+    
   }
   
-  return ""; // Return null if no match is found
+  return "0"; // Return null if no match is found
 }
 
 
@@ -234,7 +247,7 @@ String? extractTotalPrice(List<String> textList) {
             ),
             const SizedBox(height: 15),
             pdfFiles.isEmpty
-          ? const Center(child: Text("Todavía no tienes PDFs."),)
+          ? const Center(child: Text("Todavía no tienes PDFs."))
           : Expanded(
             child: ListView.builder(
               itemCount: pdfFiles.length,

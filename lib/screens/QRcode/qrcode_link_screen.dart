@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
@@ -63,46 +62,40 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
   } 
 
 
-  Future<void> downloadElectronicBill(String downloadUrl) async {
-    setState(() {
-      isLoading = true;
-    });
-                
-    final dir = await getExternalStorageDirectory(); // Returns app's external storage
-    final path = "${dir!.path}/invoices";
-    await Directory(path).create(recursive: true);
-
-    String fileName = "invoice_${DateTime.now().millisecondsSinceEpoch}.pdf";
-
+  Future<bool> isDownloadLink(String url) async {
     try {
-      await FlutterDownloader.enqueue(
-        url: downloadUrl,
-        savedDir: path,
-        fileName: fileName,
-        showNotification: true,
-        openFileFromNotification: true,
-       );
+      final response = await http.head(Uri.parse(url));
 
-      showSnackbar("Se esta descargando la factura");
+      if (response.statusCode == 200) {
+          // Check Content-Disposition header
+          final contentDisposition = response.headers['content-disposition'];
+          if (contentDisposition != null && contentDisposition.contains('attachment')) {
+            return true; // Server explicitly suggests download
+          }
 
-      await Future.delayed(const Duration(seconds: 6), () {
-        setState(() {
-          isLoading = false;
-        });
+          // Check Content-Type header for common download file types
+          final contentType = response.headers['content-type'];
+          if (contentType != null) {
+            // Example: check for common binary types or archives
+            if (contentType.contains('application/octet-stream') ||
+                contentType.contains('application/zip') ||
+                contentType.contains('application/pdf') ||
+                contentType.contains('image/') // Consider images as downloadable if desired
+                // Add more content types as needed
+            ) {
+              return true;
+            }
+          }
+        }
+        return false; 
 
-        showSnackbar("Se ha descargado la factura");
-        Navigator.pop(context);
-            
-        });
+    } catch(e) {
+      print('Error checking URL: $e');
+      return false;
 
-      } catch (e) {
-
-      showSnackbar("Ha ocurrido un problema con el PDF");
-    } finally {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => const ReceiptScreen()));
     }
-  }
 
+  }
 
   Future<void> downloadPdfDian(String downloadUrl) async {
     setState(() {
@@ -167,6 +160,7 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
           initialUrlRequest: URLRequest(url: WebUri(widget.uri!)),
           onWebViewCreated: (controller) {
             webViewController = controller;
+            originalUrl = widget.uri;
           },
           shouldInterceptRequest: (controller, request) async {
             final url = request.url.toString();
@@ -177,6 +171,15 @@ class _QrcodeLinkScreenState extends State<QrcodeLinkScreen> {
               print("Not detected yet");
             }
             return Future.value(null);
+          },
+          onDownloadStartRequest: (controller, request) {
+            final String url = request.url.toString();
+
+            if(widget.uri == url) {
+              downloadPdfDian(url);
+            } else {
+              print("Url: $url");
+            }
           },
         ),
       ),

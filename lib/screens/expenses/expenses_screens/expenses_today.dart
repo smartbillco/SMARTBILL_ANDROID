@@ -38,21 +38,29 @@ class _ExpensesTodayState extends State<ExpensesToday> {
     var db = await databaseConnection.openDb();
     double totalSum = 0;
     double totalSubs = 0;
-    DateTime? date = DateTime.now();
 
-    var result = await db.query('transactions', where: 'userId = ? AND date = date("now")', whereArgs: [user!.uid], orderBy: 'date DESC');
+    final now = DateTime.now();
+    final startOfDay = DateTime(now.year, now.month, now.day);
+    final endOfDay = startOfDay.add(const Duration(days: 1));
 
-    for(var transaction in result) {
+    var result = await db.query(
+      'transactions',
+      where: 'userId = ? AND date >= ? AND date < ?',
+      whereArgs: [
+        user!.uid,
+        startOfDay.toIso8601String(),
+        endOfDay.toIso8601String(),
+      ],
+      orderBy: 'date DESC',
+    );
+
+    for (var transaction in result) {
       String transactionAmount = transaction['amount'].toString().replaceAll(',', '');
-      if(transaction['type'] == 'income') {
+      if (transaction['type'] == 'income') {
         totalSum += double.parse(transactionAmount);
       } else if (transaction['type'] == 'expense') {
         totalSubs += double.parse(transactionAmount);
       }
-
-      print(transaction['date']);
-      print(date);
-      
     }
 
     setState(() {
@@ -60,7 +68,7 @@ class _ExpensesTodayState extends State<ExpensesToday> {
       total = totalSum - totalSubs;
     });
   }
-
+  
   //Delete transaction
   Future<void> deleteRegister(int id) async {
     var db = await databaseConnection.openDb();
@@ -148,8 +156,8 @@ class _ExpensesTodayState extends State<ExpensesToday> {
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("${transactions[index]['category']}", style: const TextStyle(fontSize: 14)),
-                          Text("${transactions[index]['date']}", style: const TextStyle(fontSize: 14)),
+                          Text(transactions[index]['category'], style: const TextStyle(fontSize: 14)),
+                          Text(DateFormat('dd/MM/yyyy').format(DateTime.parse(transactions[index]['date'])), style: const TextStyle(fontSize: 14)),
                         ],
                       ),
                       trailing: Text(NumberFormat("#,##0.00").format(transactions[index]['amount']), style: 

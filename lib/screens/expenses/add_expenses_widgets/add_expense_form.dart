@@ -39,19 +39,29 @@ class _AddExpensesFormState extends State<AddExpensesForm> {
 
 
   Future<void> _createNewTransaction() async {
-    
-    String date = DateFormat('yyyy-MM-dd').format(_selectedDate!);
+    // Usamos la fecha seleccionada pero con hora incluida
+    final now = _selectedDate ?? DateTime.now();
+    String date = now.toIso8601String(); 
+
     String formattedAmount = _expenseController.text.replaceAll(',', '');
-
     double amount = double.parse(formattedAmount);
-   
-    Transaction expense = Transaction(userId: userId, amount: amount, date: date, description: _descriptionController.text, category: _selectedCategory!, type: 'expense');
 
-    await expense.saveNewTransaction();
+    Transaction income = Transaction(
+      userId: userId,
+      amount: amount,
+      date: date, // <-- ISO8601 con hora
+      description: _descriptionController.text,
+      category: _selectedCategory!,
+      type: 'expense',
+    );
+
+    await income.saveNewTransaction();
 
     Navigator.pop(context);
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ExpensesScreen()));
-
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const ExpensesScreen()),
+    );
   }
 
 

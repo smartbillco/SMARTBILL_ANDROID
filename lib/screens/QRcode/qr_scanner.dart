@@ -45,7 +45,7 @@ class _QRScannerState extends State<QRScanner> {
 
   bool checkIfIsUri(String? result) {
     Uri? uri = Uri.tryParse(result!);
-    return uri != null && uri.hasScheme && uri.hasAuthority  && result.startsWith("https://catalogo-vpfe.dian.gov.co");
+    return uri != null && uri.hasScheme && uri.hasAuthority;
   }
 
   bool checkIfQRContainsValidInfo(String? result) {
@@ -94,11 +94,7 @@ class _QRScannerState extends State<QRScanner> {
                       if(qrResult.rawValue!.length > 20) {
                         //Check if is url or data
                         if(isUri) {
-                          if(checkIfQRContainsValidInfo(qrResult.rawValue))  {
-                            Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => QrcodeLinkScreen(uri: qrResult.rawValue)));
-                          } else {
-                            _showSnackbarError("El codigo QR no contiene informacion valida");
-                          }
+                          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => QrcodeLinkScreen(uri: qrResult.rawValue)));
                           
                         } else {
                           Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => QrcodeScreen(qrResult: qrResult.rawValue!)));
@@ -118,6 +114,7 @@ class _QRScannerState extends State<QRScanner> {
               }
 
             } catch(e) {
+              print("Error: $e");
               _showSnackbarError("Parece que el código QR no es valido. Intente on otro codigo.");
             }
   

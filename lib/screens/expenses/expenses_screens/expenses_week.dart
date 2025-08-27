@@ -150,7 +150,7 @@ class _ExpensesWeekState extends State<ExpensesWeek> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text("${transactions[index]['category']}", style: const TextStyle(fontSize: 14)),
-                          Text("${transactions[index]['date']}", style: const TextStyle(fontSize: 14)),
+                          Text(DateFormat('dd/MM/yyyy').format(DateTime.parse(transactions[index]['date'])), style: const TextStyle(fontSize: 14)),
                         ],
                       ),
                       trailing: Text(NumberFormat("#,##0.00").format(transactions[index]['amount']), style: 

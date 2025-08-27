@@ -176,17 +176,17 @@ class _VoiceRecorderScreenState extends State<VoiceRecorderScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text("Grabar transacción"),
+          title: const Text("Grabar transacción"),
         ),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              stt.isListening ? Lottie.asset('assets/sound_waves.json', width: 250) : SizedBox.square(),
+              stt.isListening ? Lottie.asset('assets/sound_waves.json', width: 250) : const SizedBox.square(),
               const Text("Grabar una nueva transacción"),
               const SizedBox(height: 30),
               TextButton.icon(
-                label: stt.isListening ? const Text("Dejar de grabar", style: TextStyle(color: Colors.white),) : Text("Comenzar a grabar", style: TextStyle(color: Colors.white)),
+                label: stt.isListening ? const Text("Dejar de grabar", style: TextStyle(color: Colors.white),) : const Text("Comenzar a grabar", style: TextStyle(color: Colors.white)),
                 onPressed: stt.isListening ? _stopRecording : _startRecording,
                 icon: Icon(stt.isListening ? Icons.mic_off : Icons.mic, size: 30, color: Colors.white,),
                 style: ButtonStyle(
@@ -195,9 +195,9 @@ class _VoiceRecorderScreenState extends State<VoiceRecorderScreen> {
   
               ),
               _lastWords.isEmpty
-                  ? SizedBox.shrink()
+                  ? const SizedBox.shrink()
                   : Card(
-                      margin: EdgeInsets.all(20),
+                      margin: const EdgeInsets.all(20),
                       elevation: 4,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
@@ -219,8 +219,8 @@ class _VoiceRecorderScreenState extends State<VoiceRecorderScreen> {
                     ? const SizedBox.shrink()
                     : ElevatedButton(
                       onPressed: () { _createNewTransaction(_amount, _lastWords, _category, _type!);},
-                      child: Text("Guardar transaccion", style: TextStyle(color: Colors.white),),
-                      style: ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.black45)),)
+                      style: const ButtonStyle(backgroundColor: WidgetStatePropertyAll(Colors.black45)),
+                      child: const Text("Guardar transaccion", style: TextStyle(color: Colors.white)),)
             ],
           ),
         ));

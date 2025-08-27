@@ -39,20 +39,30 @@ class _AddIncomeFormState extends State<AddIncomeForm> {
   }
 
 
-  Future<void> _createNewTransaction() async {
-    
-    String date = DateFormat('yyyy-MM-dd').format(_selectedDate!);
-    String formattedAmount = _incomeController.text.replaceAll(',', '');
+    Future<void> _createNewTransaction() async {
+    // Usamos la fecha seleccionada pero con hora incluida
+    final now = _selectedDate ?? DateTime.now();
+    String date = now.toIso8601String(); 
 
+    String formattedAmount = _incomeController.text.replaceAll(',', '');
     double amount = double.parse(formattedAmount);
-   
-    Transaction income = Transaction(userId: userId, amount: amount, date: date, description: _descriptionController.text, category: _selectedCategory!, type: 'income');
+
+    Transaction income = Transaction(
+      userId: userId,
+      amount: amount,
+      date: date, // <-- ISO8601 con hora
+      description: _descriptionController.text,
+      category: _selectedCategory!,
+      type: 'income',
+    );
 
     await income.saveNewTransaction();
 
     Navigator.pop(context);
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ExpensesScreen()));
-
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const ExpensesScreen()),
+    );
   }
 
 

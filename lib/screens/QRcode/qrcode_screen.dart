@@ -61,6 +61,7 @@ class _QrcodeScreenState extends State<QrcodeScreen> {
   @override
   void dispose() {
     super.dispose();
+    print("Result: ${widget.qrResult}");
   }
 
   void showSnackbar(String content) {
@@ -106,7 +107,7 @@ class _QrcodeScreenState extends State<QrcodeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             pdfContent.isEmpty
-            ? Padding(padding: const EdgeInsets.all(30.0), child: Text("Factura no válida, por favor intente con otra factura", style: TextStyle(fontSize: 18),))
+            ? const Padding(padding: EdgeInsets.all(30.0), child: Text("Factura no válida, por favor intente con otra factura", style: TextStyle(fontSize: 18),))
             :  Expanded(
                 child: isColombia
                 ? _cardColombia(pdfContent, context, saveNewColombianBill)
