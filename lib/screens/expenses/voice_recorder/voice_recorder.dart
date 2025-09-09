@@ -23,6 +23,8 @@ class _VoiceRecorderScreenState extends State<VoiceRecorderScreen> {
   double _amount = 0;
   String _category = 'Otro';
 
+  bool _isListening = false;
+
   @override
   void initState() {
     // TODO: implement initState
@@ -31,18 +33,35 @@ class _VoiceRecorderScreenState extends State<VoiceRecorderScreen> {
   }
 
   Future<void> _initSpeech() async {
-    _isSpeechEnable = await stt.initialize();
-    setState(() {});
+      bool available = await stt.initialize(
+      onStatus: (status) {
+        print('Speech status: $status');
+        if (status == 'listening') {
+          setState(() => _isListening = true);
+        } else if (status == 'notListening' || status == 'done') {
+          setState(() => _isListening = false);
+        }
+      },
+      onError: (error) => print('Speech error: $error'),
+    );
+
+    if (!available) {
+      setState(() => _isListening = false);
+    }
   }
 
   void _startRecording() async {
     await stt.listen(onResult: _processSpeech, localeId: 'es-CO');
-    setState(() {});
+    setState(() {
+      
+    });
   }
 
   void _stopRecording() async {
     await stt.stop();
-    setState(() {});
+    setState(() {
+     
+    });
   }
 
   
@@ -78,6 +97,8 @@ class _VoiceRecorderScreenState extends State<VoiceRecorderScreen> {
         millones = value;
       }
     });
+
+    print("Mill9ones: $millones");
 
     return millones * 1000000.0;
   }
@@ -126,14 +147,26 @@ class _VoiceRecorderScreenState extends State<VoiceRecorderScreen> {
 
   Future<void> _createNewTransaction(double amount, String description, String category, String type) async {
     
-    String date = DateFormat('yyyy-MM-dd').format(DateTime.now());
-   
-    Transaction transaction = Transaction(userId: userId, amount: amount, date: date, description: description, category: category, type: type);
+    // Usamos la fecha seleccionada pero con hora incluida
+      final now = DateTime.now();
+      String date = now.toIso8601String(); 
 
-    await transaction.saveNewTransaction();
+      Transaction income = Transaction(
+        userId: userId,
+        amount: amount,
+        date: date, 
+        description: description,
+        category: category,
+        type: type,
+      );
 
-    Navigator.pop(context);
-    Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ExpensesScreen()));
+      await income.saveNewTransaction();
+
+      Navigator.pop(context);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const ExpensesScreen()),
+      );
 
   }
 
@@ -145,19 +178,30 @@ class _VoiceRecorderScreenState extends State<VoiceRecorderScreen> {
     final type = _getType(text);
     double? parsedNumber;
 
+    print("Texto: $text");
+
     //Extract money amount from recording
     final amountRegex = RegExp(r'\d+(?:[\s.,]\d{3})*');
-    double? amount = double.tryParse(amountRegex.allMatches(text).last.group(0)?.replaceAll(',', '').replaceAll('.', '') ?? '');
+    final matches = amountRegex.allMatches(text);
 
-    if (amount != null) {
-      parsedNumber = amount;
+    if(matches.isNotEmpty) {
+
+      final match = double.tryParse(matches.last.group(0)?.replaceAll(',', '').replaceAll('.', '') ?? '');
+
+      if (text.contains('millón') || text.contains('millones')) {
+        print("Amouht: $match");
+        parsedNumber = parsearMillones(text) + match!;
+      } else {
+        parsedNumber = match;
+      }
+      
+    } else {
+      if (text.contains('millón') || text.contains('millones')) {
+        parsedNumber = parsearMillones(text);
+      } 
+
     }
 
-    // 2️⃣ Si no detectó bien o hay "millón/millones", procesar especial
-    if (text.contains('millón') || text.contains('millones')) {
-      print("Amouht: $amount");
-      parsedNumber = parsearMillones(text) + amount!;
-    }
 
     final newCategory = obtenerCategorias(text, type);
 
@@ -182,18 +226,15 @@ class _VoiceRecorderScreenState extends State<VoiceRecorderScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              stt.isListening ? Lottie.asset('assets/sound_waves.json', width: 250) : const SizedBox.square(),
+              _isListening ? Lottie.asset('assets/sound_waves.json', width: 250) : const SizedBox.shrink(),
               const Text("Grabar una nueva transacción"),
               const SizedBox(height: 30),
               TextButton.icon(
-                label: stt.isListening ? const Text("Dejar de grabar", style: TextStyle(color: Colors.white),) : const Text("Comenzar a grabar", style: TextStyle(color: Colors.white)),
-                onPressed: stt.isListening ? _stopRecording : _startRecording,
-                icon: Icon(stt.isListening ? Icons.mic_off : Icons.mic, size: 30, color: Colors.white,),
+                label: _isListening ? const Text("Dejar de grabar", style: TextStyle(color: Colors.white),) : const Text("Comenzar a grabar", style: TextStyle(color: Colors.white)),
+                onPressed: _isListening ? _stopRecording : _startRecording,
+                icon: Icon(_isListening ? Icons.mic_off : Icons.mic, size: 30, color: Colors.white,),
                 style: ButtonStyle(
-                    backgroundColor: WidgetStatePropertyAll(
-                        stt.isListening ? Colors.red : Colors.green)),
-  
-              ),
+                    backgroundColor: WidgetStatePropertyAll( _isListening ? Colors.red : Colors.green)),),
               _lastWords.isEmpty
                   ? const SizedBox.shrink()
                   : Card(
