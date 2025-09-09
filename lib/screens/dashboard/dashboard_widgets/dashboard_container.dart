@@ -84,7 +84,7 @@ class _DashboardContainerState extends State<DashboardContainer> {
                 icon: const Icon(Icons.qr_code, color: Colors.white, size: 35),
                 text: "Escanear QR",
                 redirect: () {
-                  redirectToScreen(const QRScanner());
+                  redirectToScreen(const QrcodeLinkScreen(uri: 'https://catalogo-vpfe.dian.gov.co/User/SearchDocument?DocumentKey=df1c3970dfab8bfeefb88792d08931233f27c9a1b524f039e78d50c0ea85dd398143bf46839f16e9efb608bcdad17992',));
                 },
                 colors: const [
                   Color.fromARGB(255, 252, 182, 30),
