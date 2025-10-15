@@ -32,7 +32,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
       appBar: AppBar(
         title: const Text("Agregar ingreso"),
       ),
-      body: _bottomItemsList[_currentIndex],
+      body: 
+      _bottomItemsList[_currentIndex],
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: _onTap,
