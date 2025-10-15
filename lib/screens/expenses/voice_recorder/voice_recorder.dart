@@ -174,11 +174,15 @@ class _VoiceRecorderScreenState extends State<VoiceRecorderScreen> {
 
   //Procesar y guardar la transaccion de voz
   Future<void> _processSpeech(SpeechRecognitionResult result) async {
-    final text = result.recognizedWords.toLowerCase();
+    String text = result.recognizedWords.toLowerCase();
     final type = _getType(text);
     double? parsedNumber;
 
     print("Texto: $text");
+
+    text = text.replaceAll(RegExp(r'1\s*mill[oó]n'), 'un millón');
+
+    print("Replaced text: $text");
 
     //Extract money amount from recording
     final amountRegex = RegExp(r'\d+(?:[\s.,]\d{3})*');

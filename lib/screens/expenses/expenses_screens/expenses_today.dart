@@ -32,6 +32,7 @@ class _ExpensesTodayState extends State<ExpensesToday> {
   void initState() {
     super.initState();
     getAllTransactions();
+    getTotal();
   }
 
   Future<void> getAllTransactions() async {
@@ -65,6 +66,27 @@ class _ExpensesTodayState extends State<ExpensesToday> {
 
     setState(() {
       transactions = result;
+    });
+  }
+
+  Future<void> getTotal() async {
+    var db = await databaseConnection.openDb();
+    double totalSum = 0;
+    double totalSubs = 0;
+
+    var result = await db.query('transactions', where: 'userId = ?', whereArgs: [user!.uid], orderBy: 'date DESC');
+
+    for(var transaction in result) {
+      String transactionAmount = transaction['amount'].toString().replaceAll(',', '');
+      if(transaction['type'] == 'income') {
+        totalSum += double.parse(transactionAmount);
+      } else if (transaction['type'] == 'expense') {
+        totalSubs += double.parse(transactionAmount);
+      }
+      
+    }
+
+    setState(() {
       total = totalSum - totalSubs;
     });
   }

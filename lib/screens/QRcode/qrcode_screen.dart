@@ -61,7 +61,7 @@ class _QrcodeScreenState extends State<QrcodeScreen> {
   @override
   void dispose() {
     super.dispose();
-    print("Result: ${widget.qrResult}");
+    
   }
 
   void showSnackbar(String content) {
