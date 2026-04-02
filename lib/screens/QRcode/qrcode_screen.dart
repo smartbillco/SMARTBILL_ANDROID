@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:smartbill/screens/QRcode/qrcode_link_screen.dart';
-import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
+import 'package:smartbill/screens/receipts/receipt_screen.dart';
 import 'package:smartbill/services/colombian_bill.dart';
 import 'package:smartbill/services/qr_handler.dart';
 import 'package:smartbill/services/peruvian_bill.dart';

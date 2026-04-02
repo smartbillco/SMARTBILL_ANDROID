@@ -1,7 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:smartbill/screens/PDFList/pdf_list.dart';
-import 'package:smartbill/screens/receipts.dart/my_receipts.dart';
+import 'package:smartbill/screens/receipts/my_receipts.dart';
 
 class ReceiptScreen extends StatefulWidget {
   const ReceiptScreen({super.key});
@@ -67,7 +67,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
               ElevatedButton.icon(
                 icon: const Icon(Icons.picture_as_pdf, size: 27, color: Colors.redAccent,),
                 onPressed: () => switchPage(1),
-                label: const Text("Facturas DIAN", style: TextStyle(fontSize: 16)),
+                label: const Text("Facturas PDF", style: TextStyle(fontSize: 16)),
               ),
             ],
           ),

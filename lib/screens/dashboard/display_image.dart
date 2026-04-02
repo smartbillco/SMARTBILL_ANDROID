@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:smartbill/models/ocr_receipts.dart';
 import 'package:smartbill/screens/overview/overview.dart';
-import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
+import 'package:smartbill/screens/receipts/receipt_screen.dart';
 import 'package:smartbill/services/camera.dart';
 
 class DisplayImageScreen extends StatefulWidget {

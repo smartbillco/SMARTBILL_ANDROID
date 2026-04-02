@@ -64,10 +64,9 @@ class _VoiceRecorderScreenState extends State<VoiceRecorderScreen> {
     });
   }
 
-  
 
   String _getType(String text) {
-    List expense = ["gasté", "compré", "invertí", "regalé", "pagué"];
+    List expense = ["gasté", "compré", "invertí", "regalé", "pagué", "compro", "usé", "consumí", "derroché", "gasto", "pago", "inversión", "perdí"];
 
     bool isExpense = expense.any((word) => text.contains(word));
 

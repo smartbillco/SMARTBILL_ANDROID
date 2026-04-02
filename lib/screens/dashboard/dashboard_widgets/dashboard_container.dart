@@ -5,7 +5,7 @@ import 'package:smartbill/screens/expenses/expenses.dart';
 import 'package:smartbill/screens/dashboard/add_bill_choice.dart';
 import 'package:smartbill/screens/dashboard/dashboard_widgets/dashboard_text.dart';
 import 'package:smartbill/screens/QRcode/qr_scanner.dart';
-import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
+import 'package:smartbill/screens/receipts/receipt_screen.dart';
 import 'package:smartbill/services/xml/xml.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 

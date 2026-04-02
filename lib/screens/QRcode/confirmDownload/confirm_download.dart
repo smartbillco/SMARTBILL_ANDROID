@@ -4,7 +4,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:provider/provider.dart';
 import 'package:smartbill/screens/dashboard/dashboard.dart';
-import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
+import 'package:smartbill/screens/receipts/receipt_screen.dart';
 import 'package:smartbill/services/settings.dart';
 
 class ConfirmDownloadScreen extends StatefulWidget {

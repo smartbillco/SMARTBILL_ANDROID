@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:smartbill/screens/QRcode/new_receipt_screen.dart';
 import 'package:smartbill/screens/QRcode/qrcode_link_screen.dart';
 import 'package:smartbill/screens/QRcode/qrcode_screen.dart';
 
@@ -94,7 +95,7 @@ class _QRScannerState extends State<QRScanner> {
                       if(qrResult.rawValue!.length > 20) {
                         //Check if is url or data
                         if(isUri) {
-                          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => QrcodeLinkScreen(uri: qrResult.rawValue)));
+                          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ReceiptDisplayScreen(uri: qrResult.rawValue!)));
                           
                         } else {
                           Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => QrcodeScreen(qrResult: qrResult.rawValue!)));

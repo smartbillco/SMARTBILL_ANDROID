@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
-import 'package:smartbill/screens/receipts.dart/receipt_widgets/delete_dialog.dart';
+import 'package:smartbill/screens/receipts/receipt_screen.dart';
+import 'package:smartbill/screens/receipts/receipt_widgets/delete_dialog.dart';
 import 'package:smartbill/services/ocr_receipts.dart';
 
 class BillDetailScreen extends StatefulWidget {

@@ -8,7 +8,7 @@ import 'package:smartbill/screens/overview/overview.dart';
 import 'package:smartbill/services/camera.dart';
 import 'package:smartbill/services/crop_image.dart';
 import 'package:smartbill/services/pdf_reader.dart';
-import 'package:smartbill/screens/receipts.dart/receipt_screen.dart';
+import 'package:smartbill/screens/receipts/receipt_screen.dart';
 import 'package:smartbill/services/xml/xml.dart';
 
 class AddBillChoice extends StatefulWidget {

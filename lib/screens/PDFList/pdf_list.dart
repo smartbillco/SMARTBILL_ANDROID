@@ -120,6 +120,7 @@ String? extractTotalPrice(List<String> textList) {
 
 
  Future<void> loadPdfs() async {
+  print("Loading pdfs");
     Directory? appDir = Platform.isAndroid ?  await getExternalStorageDirectory() : await getApplicationDocumentsDirectory();
 
     if (appDir == null) {
@@ -129,6 +130,10 @@ String? extractTotalPrice(List<String> textList) {
 
     Directory invoicesDir = Directory("${appDir.path}/invoices");
 
+    print(invoicesDir);
+
+    print(invoicesDir.listSync().isEmpty);
+;
     if (await invoicesDir.exists()) {
       List<FileSystemEntity> files = invoicesDir.listSync();
       List<File> pdfs = files
@@ -153,6 +158,8 @@ String? extractTotalPrice(List<String> textList) {
             setState(() {
               extractedText[i] = resultPdf; // Update each extracted text entry safely
             });
+
+            print(extractedText);
 
           } catch (e) {
             print("Error processing PDF ${pdf.path}: $e");

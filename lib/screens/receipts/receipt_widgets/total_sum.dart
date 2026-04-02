@@ -21,7 +21,7 @@ class _TotalSumWidgetState extends State<TotalSumWidget> {
   Widget build(BuildContext context) {
     return Container(
               padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 15),
-              height: 110,
+              height: 140,
               width: MediaQuery.of(context).size.width,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
