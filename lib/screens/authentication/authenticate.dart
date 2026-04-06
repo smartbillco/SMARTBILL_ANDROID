@@ -30,8 +30,8 @@ class _AuthenticateScreenState extends State<AuthenticateScreen> {
   }
 
   //Snackbar invalid phone number
-  void _showSnackbarcInvalidPhone() {
-    const snackbar = SnackBar(content: Text("Número invalido"), duration: Duration(seconds: 3));
+  void _showSnackbarcInvalidPhone(e) {
+    final snackbar = SnackBar(content: Text("Número invalido: $e"), duration: Duration(seconds: 3));
     ScaffoldMessenger.of(context).showSnackBar(snackbar);
     
   }
@@ -49,6 +49,8 @@ class _AuthenticateScreenState extends State<AuthenticateScreen> {
 
       fullphone = dropdownvalue + _phoneText.text.trim();
 
+      print("Full phone number: $fullphone");
+
       FocusScope.of(context).unfocus();
 
 
@@ -65,11 +67,11 @@ class _AuthenticateScreenState extends State<AuthenticateScreen> {
               Navigator.push(context, MaterialPageRoute( builder: (context) => OtpScreen(code: _verificationId)));
             },
             codeErrorCallback: (message) {
-              _showSnackbarcInvalidPhone();
+              _showSnackbarcInvalidPhone(message);
 
             });
 
-            await Future.delayed(Duration(seconds: 3));
+            await Future.delayed(Duration(seconds: 5));
       }
     }
     catch(e) {
