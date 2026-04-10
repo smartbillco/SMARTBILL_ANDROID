@@ -79,7 +79,7 @@ class _ReceiptScreenState extends State<ReceiptDisplayScreen> {
           } else if(snapshot.hasError) {
 
             print(snapshot.error);
-            return const Center(child: Text("Hubo un error cargando la factura"));
+            return Center(child: Text("Hubo un error cargando la factura: ${snapshot.error}"));
 
           } else if(snapshot.hasData) {
 

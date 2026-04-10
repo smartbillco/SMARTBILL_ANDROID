@@ -6,70 +6,81 @@ class QRBillHandler {
 
   DatabaseConnection _databaseConnection = DatabaseConnection();
 
-  //Read new Colombian QR code
-  Map<String, dynamic> parseQrColombia(String qrResult) {
+  Map<String, String> parseQrColombia(String qr) {
 
-    bool isColonAfterNumFac(String input) {
-      RegExp regex = RegExp(r'NumFac\s*([=:])');
-      final match = regex.firstMatch(input);
-      if (match != null) {
-        return match.group(1) == ':'; // true if ':', false if '='
-      }
-      return false; // or throw an error if NumFac not found
-    }
+  Map<String, String> data = {};
 
-    try {
-      
-      if(isColonAfterNumFac(qrResult)) {
-        print("QR: $qrResult");
-        List lines = qrResult.contains('\n') ? qrResult.split('\n') : qrResult.split(' ');
-        print("lines: $lines");
-        List qrList = lines.map((item) => item.split(':').last).toList();
-        print("QR list: $qrList");
-        List keys = ['bill_number', 'date', 'time', 'nit', 'customer_id', 'amount_before_iva', 'iva', 'other_tax', 'total_amount', 'cufe', 'dian_link'];
+  try {
+    print("QR RAW: $qr");
 
-        Map<String, dynamic> qrPdf = {};
+    // 🔹 1. Separar por ;
+    List<String> parts = qr.split(';');
 
-        for(var i = 0; i < 11; i++){
-          if(i >= qrList.length || qrList[i].trim().isEmpty) {
-            qrPdf[keys[i]] = "Vacio";
-          } else {
-            qrPdf[keys[i]] = qrList[i];
-          }
-        }
+    for (var part in parts) {
 
-        print("Printing QR pdf $qrPdf");
+      part = part.trim();
+      if (part.isEmpty) continue;
 
-        return qrPdf;
+      // 🔹 2. Detectar si usa = o :
+      List<String> keyValue;
 
+      if (part.contains('=')) {
+        keyValue = part.split('=');
+      } else if (part.contains(':')) {
+        keyValue = part.split(':');
       } else {
-        List lines = qrResult.contains('\n') ? qrResult.split('\n') : qrResult.split(' ');
-        List qrList = lines.map((item) => item.split('=')[1].split(' ')[0]).toList();
-        List keys = ['bill_number', 'date', 'time', 'nit', 'customer_id', 'amount_before_iva', 'iva', 'other_tax', 'total_amount', 'cufe', 'dian_link'];
-
-        Map<String, dynamic> qrPdf = {};
-
-        for(var i = 0; i < 11; i++){
-          if(i >= qrList.length || qrList[i].trim().isEmpty) {
-            qrPdf[keys[i]] = "Vacio";
-          } else {
-            qrPdf[keys[i]] = qrList[i];
-          }
-        }
-
-        print("Printing QR pdf right $qrPdf");
-
-        return qrPdf;
-
+        continue;
       }
 
-    } catch(e) {
-      Map<String, dynamic> error = {
-        'error': e
-      };
-      return error;
+      if (keyValue.length < 2) continue;
+
+      String key = keyValue[0].trim().toLowerCase();
+      String value = keyValue.sublist(1).join('=').trim(); 
+      // 👆 importante: por si el valor tiene '=' (como URLs)
+
+      data[key] = value;
     }
+
+    print("PARSED DATA: $data");
+
+    // 🔹 3. Mapear a tus keys
+    return {
+      'bill_number': data['numfac'] ?? "Vacio",
+      'date': data['fecfac'] ?? "Vacio",
+      'time': data['horfac'] ?? "Vacio",
+      'nit': data['nitfac'] ?? "Vacio",
+      'customer_id': data['docadq'] ?? "Vacio",
+      'amount_before_iva': data['valfac'] ?? "0",
+      'iva': data['valiva'] ?? "0",
+      'other_tax': data['valotroim'] ?? "0",
+      'total_amount': data['valtotalfac'] ?? "0",
+      'cufe': data['cufe'] ?? "Vacio",
+      'dian_link': data['qrcode'] ?? "Vacio",
+    };
+
+  } catch (e) {
+
+    print("ERROR: $e");
+
+    // 🔥 CONTINGENCIA SOLO CUFE
+    RegExp cufeRegex = RegExp(r'\b([a-fA-F0-9]{32,})\b');
+    final match = cufeRegex.firstMatch(qr);
+
+    return {
+      'bill_number': "Vacio",
+      'date': "Vacio",
+      'time': "Vacio",
+      'nit': "Vacio",
+      'customer_id': "Vacio",
+      'amount_before_iva': "0",
+      'iva': "0",
+      'other_tax': "0",
+      'total_amount': "0",
+      'cufe': match != null ? match.group(1)! : "No encontrado",
+      'dian_link': "Vacio",
+    };
   }
+}
 
   //Read QR bill from Peru
   Map<String, dynamic> parseQrPeru(String qrResult) {

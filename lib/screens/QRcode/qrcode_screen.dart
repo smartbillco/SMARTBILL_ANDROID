@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 import 'package:smartbill/screens/QRcode/qrcode_link_screen.dart';
 import 'package:smartbill/screens/receipts/receipt_screen.dart';
 import 'package:smartbill/services/colombian_bill.dart';
+import 'package:smartbill/services/dianReceiptService.dart';
 import 'package:smartbill/services/qr_handler.dart';
 import 'package:smartbill/services/peruvian_bill.dart';
 
@@ -32,28 +34,35 @@ class _QrcodeScreenState extends State<QrcodeScreen> {
 
 
   void pdfFormat() {
-    print(widget.qrResult);
-    if(widget.qrResult.contains('|')) {
-      setState(() {
-        isColombia = false;
-        isPeru = true;
-        pdfContent = qrBillHandler.parseQrPeru(widget.qrResult);
-      });
 
-    } else if(widget.qrResult.contains('NumFac')) {
-      setState(() {
-        isPeru = false;
-        isColombia = true;
-        pdfContent = qrBillHandler.parseQrColombia(widget.qrResult);
-        
-      });
-    } else {
-      setState(() {
-        isPeru = false;
-        isColombia = false;
-        pdfContent = {};
-      });
+    try {
+      print(widget.qrResult);
+      if(widget.qrResult.contains('|')) {
+        setState(() {
+          isColombia = false;
+          isPeru = true;
+          pdfContent = qrBillHandler.parseQrPeru(widget.qrResult);
+        });
+
+      } else if(widget.qrResult.contains('NumFac')) {
+        setState(() {
+          isPeru = false;
+          isColombia = true;
+          pdfContent = qrBillHandler.parseQrColombia(widget.qrResult);
+          
+        });
+      } else {
+        setState(() {
+          isPeru = false;
+          isColombia = false;
+          pdfContent = {};
+        });
+      }
+
+    } catch(e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Parece que tu factura no pudo ser descargada. Comunicate con soporte.")));
     }
+    
 
     print("QRContent: $pdfContent");
   }
@@ -110,7 +119,7 @@ class _QrcodeScreenState extends State<QrcodeScreen> {
             ? const Padding(padding: EdgeInsets.all(30.0), child: Text("Factura no válida, por favor intente con otra factura", style: TextStyle(fontSize: 18),))
             :  Expanded(
                 child: isColombia
-                ? _cardColombia(pdfContent, context, saveNewColombianBill)
+                ? ColombiaCard(pdfContent: pdfContent)
                 : _cardPeru(pdfContent, context, saveNewPeruvianBill),
               )
           ],
@@ -120,94 +129,192 @@ class _QrcodeScreenState extends State<QrcodeScreen> {
   }
 }
 
+class ColombiaCard extends StatefulWidget {
+  final Map pdfContent;
 
-Widget _cardColombia(Map pdfContent, context, Future<void> Function() saveFunction) {
+  const ColombiaCard({
+    super.key,
+    required this.pdfContent,
+  });
+
+  @override
+  State<ColombiaCard> createState() => _ColombiaCardState();
+}
+
+class _ColombiaCardState extends State<ColombiaCard> {
+
+  DianReceiptService dianReceiptService = DianReceiptService();
+
+  bool isLoading = false;
 
   bool hasDocumentKeyValue(String url) {
     try {
       Uri uri = Uri.parse(url);
       final docKey = uri.queryParameters['documentkey'];
       return docKey != null && docKey.isNotEmpty;
-
-    } catch(e) {
+    } catch (e) {
       return false;
     }
-
   }
 
-  Future<void> _redirectToDianWebView() async {
-    String url = pdfContent['dian_link'].toString();
+  Future<void> downloadPdfFile(String cufe) async {
+    setState(() {
+      isLoading = true;
+    });
 
-    if(hasDocumentKeyValue(url)) {  
-      print("Link complete: $url");
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => QrcodeLinkScreen(uri: "https://${url}")));
-    } else {
-      print("Link not complete: $url");
+    try {
+      final pdfData = await dianReceiptService.getPdfDian(cufe);
 
-      String completeUrl = 'https://catalogo-vpfe.dian.gov.co/User/SearchDocument?DocumentKey=' + pdfContent['cufe'].toString();
-      print("Link add $completeUrl");
+      await dianReceiptService.base64ToPdfAndSave(pdfData.pdf);
 
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => QrcodeLinkScreen(uri: completeUrl)));
+      print("Finished: ${pdfData.pdf}");
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ReceiptScreen(),
+        ),
+      );
+
+    } catch (e) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text("$e")));
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
     }
-
   }
 
+  Widget _buildRow(String label, dynamic value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w500)),
+          Flexible(child: Text(value.toString())),
+        ],
+      ),
+    );
+  }
 
-  return SingleChildScrollView(
-    child: SizedBox(
-      child: Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 4,
-      margin: const EdgeInsets.symmetric(vertical: 40, horizontal: 10),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: 
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+  @override
+  Widget build(BuildContext context) {
+    final pdfContent = widget.pdfContent;
+
+    return SingleChildScrollView(
+      child:
+      isLoading
+      ? SizedBox(
+          height: MediaQuery.of(context).size.height,
+          child: Column(
           children: [
-            Text(
-              "Factura No. ${pdfContent['bill_number']}",
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const Divider(),
-            const SizedBox(height: 10),
-            _buildRow("NIT", pdfContent['nit']),
-            _buildRow("Id Cliente", pdfContent['customer_id']),
-            _buildRow("Sin IVA", NumberFormat('#,##0', 'en_US').format(double.parse(pdfContent['amount_before_iva'])).toString()),
-            _buildRow("IVA", NumberFormat('#,##0', 'en_US').format(double.parse(pdfContent['iva'])).toString()),
-            _buildRow("Pago", NumberFormat('#,##0', 'en_US').format(double.parse(pdfContent['total_amount'])).toString()),
-            _buildRow("Fecha", pdfContent['date']),
-            _buildRow("CUFE", pdfContent['cufe']),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text("Descarga", style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 18)),
-                SizedBox(
-                  width: 200,
-                  child: TextButton(onPressed: _redirectToDianWebView, child: Text("Descargar factura desde la DIAN", style: const TextStyle(fontWeight: FontWeight.w400, fontSize: 16, color: Colors.blue,)),
+            const SizedBox(height: 30),
+            Lottie.asset('assets/download icon.json', backgroundLoading: false,),
+            const SizedBox(height: 40),
+            const Text("Estamos descargando tu factura. Esto podría tardar un poco.", textAlign: TextAlign.center, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),)
+          ]
+        )
+        )
+      : Card(
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12)),
+        elevation: 4,
+        margin: const EdgeInsets.symmetric(vertical: 40, horizontal: 10),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+
+              Text(
+                "Factura No. ${pdfContent['bill_number']}",
+                style: const TextStyle(
+                    fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+
+              const Divider(),
+              const SizedBox(height: 10),
+
+              _buildRow("NIT", pdfContent['nit']),
+              _buildRow("Id Cliente", pdfContent['customer_id']),
+              _buildRow(
+                "Sin IVA",
+                NumberFormat('#,##0', 'en_US')
+                    .format(double.parse(pdfContent['amount_before_iva']))
+                    .toString(),
+              ),
+              _buildRow(
+                "IVA",
+                NumberFormat('#,##0', 'en_US')
+                    .format(double.parse(pdfContent['iva']))
+                    .toString(),
+              ),
+              _buildRow(
+                "Pago",
+                NumberFormat('#,##0', 'en_US')
+                    .format(double.parse(pdfContent['total_amount']))
+                    .toString(),
+              ),
+              _buildRow("Fecha", pdfContent['date']),
+              _buildRow("CUFE", pdfContent['cufe']),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    "Descarga",
+                    style: TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 18),
+                  ),
+                  SizedBox(
+                    width: 200,
+                    child: TextButton(
+                      onPressed: () {
+                        downloadPdfFile(pdfContent['cufe']);
+                      },
+                      child: const Text(
+                        "Descargar factura en PDF",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w400,
+                          fontSize: 16,
+                          color: Colors.blue,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 30),
+
+              SizedBox(
+                width: MediaQuery.of(context).size.width - 10,
+                child: ElevatedButton(
+                  style: const ButtonStyle(
+                    backgroundColor:
+                        WidgetStatePropertyAll(Colors.greenAccent),
+                  ),
+                  onPressed: (){downloadPdfFile(pdfContent['cufe']);},
+                  child: const Text("Guardar factura"),
+                ),
+              ),
+
+              if (isLoading)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(12),
+                    child: CircularProgressIndicator(),
                   ),
                 ),
-              ],
-            ),
-
-            const SizedBox(height: 30),
-            SizedBox(
-              width: MediaQuery.of(context).size.width - 10,
-              child: ElevatedButton(
-                  style: const ButtonStyle(
-                      backgroundColor:
-                          WidgetStatePropertyAll(Colors.greenAccent)),
-                  onPressed: () {
-                    saveFunction();
-                  },
-                  child: const Text("Guardar factura")),
-            )
-          ],
+            ],
+          ),
         ),
       ),
-    )),
-  );
+    );
+  }
 }
 
 

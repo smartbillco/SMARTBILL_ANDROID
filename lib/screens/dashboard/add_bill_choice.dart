@@ -123,7 +123,7 @@ class _AddBillChoiceState extends State<AddBillChoice> {
               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Parece que la imagen no contiene información completa o no es una factura")));
               Navigator.pop(context);
             } else {
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: croppedImage, recognizedText: recognizedText)));
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: croppedImage!, recognizedText: recognizedText)));
 
             }
 
@@ -156,7 +156,7 @@ class _AddBillChoiceState extends State<AddBillChoice> {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Parece que la imagen no contiene información completa o no es una factura")));
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const OverviewScreen()));
     } else {
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: croppedImage, recognizedText: recognizedText)));
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => DisplayImageScreen(image: croppedImage!, recognizedText: recognizedText)));
 
     }
     

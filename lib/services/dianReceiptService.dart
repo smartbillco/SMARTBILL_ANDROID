@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:io';
-
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:smartbill/models/dian_pdf.dart';
@@ -10,7 +9,7 @@ import 'package:smartbill/models/dian_receipts.dart';
 
 class DianReceiptService {
 
-  String url = 'http://147.93.184.41:8088/api/dian/document';
+  String url = 'http://147.93.184.41:8088/api/pos/dian/document';
 
   Future<Receipt> getReceiptByCufe(String cufe) async {
     
@@ -59,7 +58,7 @@ class DianReceiptService {
       return pdf;
 
     } else {
-      throw Exception("No se pudo descargar el PDF.");
+      throw Exception("No se pudo descargar el PDF. Por favor intentelo de nuevo.");
     }
 
   }

@@ -74,7 +74,7 @@ class _QRScannerState extends State<QRScanner> {
 
             try {
               if(barcodes.first.format != BarcodeFormat.qrCode) {
-                _showSnackbarError("El código detectado no es QR. Verifique que el código es válido o no hay un código de barras en la factura.");
+                _showSnackbarError("El código detectado no es QR. Verifique que el código sea válido o no hay un código de barras en la factura.");
                 Navigator.pop(context);
                 scannerController.dispose();
                 
@@ -96,6 +96,7 @@ class _QRScannerState extends State<QRScanner> {
                         //Check if is url or data
                         if(isUri) {
                           Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ReceiptDisplayScreen(uri: qrResult.rawValue!)));
+                          print("Valor de QR: ${qrResult.rawValue}");
                           
                         } else {
                           Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => QrcodeScreen(qrResult: qrResult.rawValue!)));

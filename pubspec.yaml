@@ -50,13 +50,14 @@ dependencies:
   flutter_inappwebview: ^6.1.5
   flutter_downloader: ^1.11.6
   path_provider: ^2.1.2
-  intl: ^0.18.0
+  intl: ^0.20.2
   open_filex: ^4.6.0
   shared_preferences: ^2.5.3
 
   # Select image for text extraction
   image_picker: ^1.1.2
   google_mlkit_text_recognition: ^0.15.0
+  receipt_recognition: ^0.2.8
   
 
   # The following adds the Cupertino Icons font to your application.

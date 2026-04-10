@@ -432,6 +432,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  fuzzywuzzy:
+    dependency: transitive
+    description:
+      name: fuzzywuzzy
+      sha256: "3004379ffd6e7f476a0c2091f38f16588dc45f67de7adf7c41aa85dec06b432c"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
   glob:
     dependency: transitive
     description:
@@ -580,10 +588,10 @@ packages:
     dependency: "direct main"
     description:
       name: intl
-      sha256: "3bc132a9dbce73a7e4a21a17d06e1878839ffbf975568bc875c60537824b0c4d"
+      sha256: "3df61194eb431efc39c4ceba583b95633a403f46c9fd341e550ce0bfa50e9aa5"
       url: "https://pub.dev"
     source: hosted
-    version: "0.18.1"
+    version: "0.20.2"
   json_annotation:
     dependency: transitive
     description:
@@ -920,6 +928,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.3.1"
+  receipt_recognition:
+    dependency: "direct main"
+    description:
+      name: receipt_recognition
+      sha256: "9ed0725293fcab289deb8d896c47592b85b93e74d8fb46e2b4d6bcdb438fb01a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.2.8"
   shared_preferences:
     dependency: "direct main"
     description:

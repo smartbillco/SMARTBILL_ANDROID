@@ -282,7 +282,8 @@ class _DisplayImageScreenState extends State<DisplayImageScreen> {
                     });
                   }, child: isTotalCorrect ? Text("Cambiar Total") : Text("Establecer") )
                 ],
-              )
+              ),
+              Text(widget.recognizedText!)
             ],
         ),
       ),
