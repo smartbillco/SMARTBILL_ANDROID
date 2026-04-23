@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:smartbill/screens/QRcode/qrcode_link_screen.dart';
+import 'package:smartbill/screens/QRcode/scanner/qr_scanner.dart';
 import 'package:smartbill/screens/dashboard/dashboard_widgets/dashboard_carrousel.dart';
 import 'package:smartbill/screens/expenses/expenses.dart';
 import 'package:smartbill/screens/dashboard/add_bill_choice.dart';
 import 'package:smartbill/screens/dashboard/dashboard_widgets/dashboard_text.dart';
-import 'package:smartbill/screens/QRcode/qr_scanner.dart';
 import 'package:smartbill/screens/receipts/receipt_screen.dart';
 import 'package:smartbill/services/xml/xml.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -84,7 +83,7 @@ class _DashboardContainerState extends State<DashboardContainer> {
                 icon: const Icon(Icons.qr_code, color: Colors.white, size: 35),
                 text: "Escanear QR",
                 redirect: () {
-                  redirectToScreen(const QRScanner());
+                  redirectToScreen(QRScanner());
                 },
                 colors: const [
                   Color.fromARGB(255, 252, 182, 30),

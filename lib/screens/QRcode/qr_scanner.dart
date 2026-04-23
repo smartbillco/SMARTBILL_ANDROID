@@ -3,7 +3,6 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:smartbill/screens/QRcode/new_receipt_screen.dart';
-import 'package:smartbill/screens/QRcode/qrcode_link_screen.dart';
 import 'package:smartbill/screens/QRcode/qrcode_screen.dart';
 
 class QRScanner extends StatefulWidget {
@@ -14,28 +13,37 @@ class QRScanner extends StatefulWidget {
 }
 
 class _QRScannerState extends State<QRScanner> {
-  MobileScannerController scannerController = MobileScannerController();
+  final MobileScannerController scannerController = MobileScannerController();
   Timer? _timeoutTimer;
   bool _scanning = true;
-  bool isUri = true;
 
-
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
 
   void _showSnackbarError(String error) {
-    var snackbar = SnackBar(content: Text("Ocurrió un error: $error"), duration: Duration(seconds: 6),);
-    ScaffoldMessenger.of(context).showSnackBar(snackbar);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text("Ocurrió un error: $error"),
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   void _showSnackbarTimeout() {
-    var snackbar = const SnackBar(content: Text("Su factura no pudo ser leida. Intenta con otra factura."), duration: Duration(seconds: 3),);
-    ScaffoldMessenger.of(context).showSnackBar(snackbar);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Su factura no pudo ser leída. Intenta con otra."),
+        duration: Duration(seconds: 3),
+      ),
+    );
   }
 
-
   void _startTimer() {
-    
-    _timeoutTimer = Timer(const Duration(seconds: 15), () async {
-      if(_scanning) {
+    _timeoutTimer = Timer(const Duration(seconds: 10), () {
+      if (_scanning) {
         scannerController.stop();
         _scanning = false;
         _showSnackbarTimeout();
@@ -44,22 +52,32 @@ class _QRScannerState extends State<QRScanner> {
     });
   }
 
-  bool checkIfIsUri(String? result) {
-    Uri? uri = Uri.tryParse(result!);
-    return uri != null && uri.hasScheme && uri.hasAuthority;
+  bool _isValidCufeFlexible(String cufe) {
+    return RegExp(r'^[a-fA-F0-9]{64,}$').hasMatch(cufe);
   }
 
-  bool checkIfQRContainsValidInfo(String? result) {
-    return result!.length > 20;
+  String? extractCufe(String input) {
+    // 1. Intentar desde URL
+    try {
+      final uri = Uri.parse(input);
+      final cufeFromUrl = uri.queryParameters['documentkey'];
+      if (cufeFromUrl != null && _isValidCufeFlexible(cufeFromUrl)) {
+        return cufeFromUrl;
+      }
+    } catch (_) {}
 
-  }
+    // 2. Buscar CUFE completo después de "CUFE:"
+    final regexLabel = RegExp(r'CUFE:\s*([a-fA-F0-9]+)');
+    final matchLabel = regexLabel.firstMatch(input);
+    if (matchLabel != null) {
+      return matchLabel.group(1);
+    }
 
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    _startTimer();
-    
+    // 3. Fallback: buscar bloque largo (mínimo 64)
+    final regexGeneric = RegExp(r'[a-fA-F0-9]{64,}');
+    final matchGeneric = regexGeneric.firstMatch(input);
+
+    return matchGeneric?.group(0);
   }
 
   @override
@@ -67,90 +85,99 @@ class _QRScannerState extends State<QRScanner> {
     return Scaffold(
       body: Stack(
         children: [
-        MobileScanner(
-          controller: scannerController,
-          onDetect: (BarcodeCapture capture) async {
-            final List<Barcode> barcodes = capture.barcodes;
+          MobileScanner(
+            controller: scannerController,
+            onDetect: (BarcodeCapture capture) async {
+              final barcodes = capture.barcodes;
 
-            try {
-              if(barcodes.first.format != BarcodeFormat.qrCode) {
-                _showSnackbarError("El código detectado no es QR. Verifique que el código sea válido o no hay un código de barras en la factura.");
-                Navigator.pop(context);
-                scannerController.dispose();
-                
-              } else {
-                final qrResult = barcodes.first;
-        
-                if (qrResult.rawValue != null) {
+              if (barcodes.isEmpty) return;
 
-                  _timeoutTimer?.cancel(); // Stop timeout if QR is scanned
-                  _scanning = false;
-                  //To do with code
-                  await scannerController
-                    .stop()
-                    .then((value) => scannerController.dispose())
-                    .then((value) {
-                      var isUri = checkIfIsUri(qrResult.rawValue);
-                      //Check if qr content is valid information
-                      if(qrResult.rawValue!.length > 20) {
-                        //Check if is url or data
-                        if(isUri) {
-                          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ReceiptDisplayScreen(uri: qrResult.rawValue!)));
-                          print("Valor de QR: ${qrResult.rawValue}");
-                          
-                        } else {
-                          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => QrcodeScreen(qrResult: qrResult.rawValue!)));
-                        }
-                        //If information is not valid show snackbar
-                      } else {
-                        _showSnackbarError("Parece que el código QR no contiene información relevante.");
-                        Navigator.pop(context);
-                      }
-                        
-                    });
-                                
-                } else {
-                      _showSnackbarError("ERROR al leer QR");    
+              try {
+                final barcode = barcodes.first;
+
+                if (barcode.format != BarcodeFormat.qrCode) {
+                  _showSnackbarError("El código no es un QR válido.");
+                  Navigator.pop(context);
+                  return;
                 }
-                
-              }
 
-            } catch(e) {
-              print("Error: $e");
-              _showSnackbarError("Parece que el código QR no es valido. Intente on otro codigo.");
-            }
-  
-          },
-          onDetectError:(error, stackTrace) {
-            _showSnackbarError(error.toString());
-          },
-        ),
-        Positioned.fill(
-              child: Container(
-                decoration: ShapeDecoration(
-                  shape: QrScannerOverlayShape(
-                    borderColor: Colors.blue,
-                    borderRadius: 10,
-                    borderLength: 20,
-                    borderWidth: 7,
-                    cutOutSize: 280,
-                  ),
+                final raw = barcode.rawValue;
+
+                if (raw == null || raw.isEmpty) {
+                  _showSnackbarError("No se pudo leer el QR.");
+                  return;
+                }
+
+                _timeoutTimer?.cancel();
+                _scanning = false;
+
+                await scannerController.stop();
+                await scannerController.dispose();
+
+                // 🔥 EXTRAER CUFE
+                final cufe = extractCufe(raw);
+
+                if (cufe != null && _isValidCufeFlexible(cufe)) {
+                  print("✅ CUFE detectado: $cufe");
+
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ReceiptDisplayScreen(cufe: cufe),
+                    ),
+                  );
+                } else {
+                  // 🔁 FALLBACK
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => QrcodeScreen(qrResult: raw),
+                    ),
+                  );
+                }
+              } catch (e) {
+                print("Error: $e");
+                _showSnackbarError("QR inválido o no compatible.");
+              }
+            },
+            onDetectError: (error, stackTrace) {
+              _showSnackbarError(error.toString());
+            },
+          ),
+
+          /// Overlay UI
+          Positioned.fill(
+            child: Container(
+              decoration: ShapeDecoration(
+                shape: QrScannerOverlayShape(
+                  borderColor: Colors.blue,
+                  borderRadius: 10,
+                  borderLength: 20,
+                  borderWidth: 6,
+                  cutOutSize: 280,
                 ),
-                child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.camera_alt, size: 100, color: Color.fromARGB(122, 255, 255, 255),),
-                      Transform.translate(
-                        offset: const Offset(0, 60),
-                        child: const Text("Escanea tu factura", style: TextStyle(color: Color.fromARGB(150, 255, 255, 255), fontSize: 18))
-                      )
-                    ])
+              ),
+              child: const Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: const [
+                    Icon(Icons.camera_alt,
+                        size: 90, color: Color.fromARGB(120, 255, 255, 255)),
+                    SizedBox(height: 40),
+                    Text(
+                      "Escanea tu factura",
+                      style: TextStyle(
+                        color: Color.fromARGB(180, 255, 255, 255),
+                        fontSize: 18,
+                      ),
+                    )
+                  ],
                 ),
               ),
             ),
-            
-      ]),
+          ),
+        ],
+      ),
     );
   }
 
@@ -161,7 +188,6 @@ class _QRScannerState extends State<QRScanner> {
     super.dispose();
   }
 }
-
 
 class QrScannerOverlayShape extends ShapeBorder {
   QrScannerOverlayShape({
@@ -177,14 +203,14 @@ class QrScannerOverlayShape extends ShapeBorder {
   })  : cutOutWidth = cutOutWidth ?? cutOutSize ?? 250,
         cutOutHeight = cutOutHeight ?? cutOutSize ?? 250 {
     assert(
-    borderLength <=
-        min(this.cutOutWidth, this.cutOutHeight) / 2 + borderWidth * 2,
-    "Border can't be larger than ${min(this.cutOutWidth, this.cutOutHeight) / 2 + borderWidth * 2}",
+      borderLength <=
+          min(this.cutOutWidth, this.cutOutHeight) / 2 + borderWidth * 2,
+      "Border can't be larger than ${min(this.cutOutWidth, this.cutOutHeight) / 2 + borderWidth * 2}",
     );
     assert(
-    (cutOutWidth == null && cutOutHeight == null) ||
-        (cutOutSize == null && cutOutWidth != null && cutOutHeight != null),
-    'Use only cutOutWidth and cutOutHeight or only cutOutSize');
+        (cutOutWidth == null && cutOutHeight == null) ||
+            (cutOutSize == null && cutOutWidth != null && cutOutHeight != null),
+        'Use only cutOutWidth and cutOutHeight or only cutOutSize');
   }
 
   final Color borderColor;
@@ -237,13 +263,13 @@ class QrScannerOverlayShape extends ShapeBorder {
     final height = rect.height;
     final borderOffset = borderWidth / 2;
     final mBorderLength =
-    borderLength > min(cutOutHeight, cutOutHeight) / 2 + borderWidth * 2
-        ? borderWidthSize / 2
-        : borderLength;
+        borderLength > min(cutOutHeight, cutOutHeight) / 2 + borderWidth * 2
+            ? borderWidthSize / 2
+            : borderLength;
     final mCutOutWidth =
-    cutOutWidth < width ? cutOutWidth : width - borderOffset;
+        cutOutWidth < width ? cutOutWidth : width - borderOffset;
     final mCutOutHeight =
-    cutOutHeight < height ? cutOutHeight : height - borderOffset;
+        cutOutHeight < height ? cutOutHeight : height - borderOffset;
 
     final backgroundPaint = Paint()
       ..color = overlayColor
@@ -290,7 +316,7 @@ class QrScannerOverlayShape extends ShapeBorder {
         ),
         borderPaint,
       )
-    // Draw top left corner
+      // Draw top left corner
       ..drawRRect(
         RRect.fromLTRBAndCorners(
           cutOutRect.left,
@@ -301,7 +327,7 @@ class QrScannerOverlayShape extends ShapeBorder {
         ),
         borderPaint,
       )
-    // Draw bottom right corner
+      // Draw bottom right corner
       ..drawRRect(
         RRect.fromLTRBAndCorners(
           cutOutRect.right - mBorderLength,
@@ -312,7 +338,7 @@ class QrScannerOverlayShape extends ShapeBorder {
         ),
         borderPaint,
       )
-    // Draw bottom left corner
+      // Draw bottom left corner
       ..drawRRect(
         RRect.fromLTRBAndCorners(
           cutOutRect.left,

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:smartbill/screens/receipts/receipt_modal.dart';
+import 'package:smartbill/screens/receipts/bill_detail_screen.dart';
 import 'package:smartbill/screens/receipts/receipt_widgets/delete_dialog.dart';
 import 'package:smartbill/screens/receipts/receipt_widgets/total_sum.dart';
 import 'package:smartbill/services/colombian_bill.dart';
