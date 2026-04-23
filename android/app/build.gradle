@@ -10,7 +10,7 @@ dependencies {
   // Import the Firebase BoM
   implementation platform('com.google.firebase:firebase-bom:33.6.0')
   implementation("com.google.firebase:firebase-auth")
-  coreLibraryDesugaring('com.android.tools:desugar_jdk_libs:2.0.4')
+  coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
 
   // https://firebase.google.com/docs/android/setup#available-libraries
 }
@@ -43,8 +43,8 @@ android {
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 25
         targetSdk = 35
-        versionCode = 77
-        versionName = "1.0.25"
+        versionCode = 78
+        versionName = "1.0.26"
     }
 
     signingConfigs {

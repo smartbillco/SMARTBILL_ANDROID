@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:smartbill/screens/dashboard/dashboard.dart';
+import 'package:smartbill/screens/wrapper.dart';
 import 'package:smartbill/services/custom_user.dart';
 
 class UpdateIdScreen extends StatefulWidget {
@@ -29,7 +29,7 @@ class _UpdateIdScreenState extends State<UpdateIdScreen> {
       if(mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Documento de identidad actualizado")));
       }
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardScreen())); 
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const Wrapper())); 
 
     } catch(e) {
       print("Error updating id: $e");

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:smartbill/screens/dashboard/dashboard.dart';
+import 'package:smartbill/screens/wrapper.dart';
 import 'package:smartbill/services/custom_user.dart';
 
 
@@ -26,7 +26,7 @@ class _UpdateEmailScreenState extends State<UpdateEmailScreen> {
       if(mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Se ha cambiado el correo electronica")));
       }
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const DashboardScreen())); 
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const Wrapper())); 
 
     } catch(e) {
       print("ERROR trying to update: $e");

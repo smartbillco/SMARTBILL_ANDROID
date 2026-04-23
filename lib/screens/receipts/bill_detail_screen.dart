@@ -1,11 +1,11 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:lottie/lottie.dart';
 import 'package:smartbill/screens/receipts/receipt_screen.dart';
 import 'package:smartbill/screens/receipts/receipt_widgets/delete_dialog.dart';
 import 'package:smartbill/services/ocr_receipts.dart';
 import 'package:smartbill/services/dianReceiptService.dart';
+import 'package:workmanager/workmanager.dart';
 
 class BillDetailScreen extends StatefulWidget {
   final Map receipt;
@@ -18,23 +18,24 @@ class BillDetailScreen extends StatefulWidget {
 class _BillDetailScreenState extends State<BillDetailScreen> {
   final OcrReceiptsService ocrService = OcrReceiptsService();
   final DianReceiptService dianReceiptService = DianReceiptService();
-  
+
   File? imageRendered;
-  bool isLoading = false;
-  final currencyFormat = NumberFormat.currency(locale: 'es_CO', symbol: '\$', decimalDigits: 0);
+  final currencyFormat =
+      NumberFormat.currency(locale: 'es_CO', symbol: '\$', decimalDigits: 0);
 
   @override
   void initState() {
     super.initState();
-    if (widget.receipt['currency'] == 'OCR' || widget.receipt.containsKey('image')) {
+    if (widget.receipt['currency'] == 'OCR' ||
+        widget.receipt.containsKey('image')) {
       getImageForReceipt();
     }
   }
 
   void returnToReceipts() {
     if (mounted) {
-      Navigator.pop(context); 
-      Navigator.pop(context); 
+      Navigator.pop(context);
+      Navigator.pop(context);
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const ReceiptScreen()),
@@ -62,18 +63,26 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
       return;
     }
 
-    setState(() => isLoading = true);
     try {
-      final pdfData = await dianReceiptService.getPdfDian(cufe);
-      await dianReceiptService.base64ToPdfAndSave(pdfData.pdf);
-      if (!mounted) return;
-      _showSnackBar("¡Factura guardada correctamente!", Colors.black);
+      // 1. Programar la tarea en segundo plano (Worker que definimos en el main)
+      await Workmanager().registerOneOffTask(
+        "download_${cufe.hashCode}_${DateTime.now().millisecondsSinceEpoch}",
+        "downloadPdfTask",
+        inputData: {"cufe": cufe},
+        constraints: Constraints(
+          networkType: NetworkType.connected,
+        ),
+      );
+
+      // 2. Notificar al usuario que el proceso inició
+      _showSnackBar(
+          "Iniciando descarga en segundo plano. Tu factura estará disponible en un momento.",
+          Colors.blueGrey);
+
+      // No ponemos isLoading = false porque ya no bloqueamos la pantalla
     } catch (e) {
-      if (mounted) {
-        _showSnackBar("Error en la descarga: $e", Colors.redAccent);
-      }
-    } finally {
-      if (mounted) setState(() => isLoading = false);
+      debugPrint("Error programando tarea: $e");
+      _showSnackBar("No se pudo programar la descarga.", Colors.redAccent);
     }
   }
 
@@ -88,61 +97,56 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
     );
   }
 
+  //Validar el cufe
+  bool _isCufeValid() {
+    final cufe = widget.receipt['cufe'];
+
+    if (cufe == null) return false;
+
+    final String cufeStr = cufe.toString().trim();
+
+    // Validamos que no esté vacío, que no sea "No encontrado"
+    // y, opcionalmente, que tenga una longitud mínima (los CUFE son largos)
+    return cufeStr.isNotEmpty &&
+        cufeStr != "No encontrado" &&
+        cufeStr.length > 40;
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isOcr = widget.receipt.containsKey('text');
-    
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF2F2F2), // Gris muy claro de fondo
-      appBar: AppBar(
-        title: const Text("Detalle de Factura", style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
-        centerTitle: true,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 0,
-        actions: [
-          if (widget.receipt['cufe'] != null && widget.receipt['cufe'] != "No encontrado")
-            IconButton(
-              icon: const Icon(Icons.picture_as_pdf_outlined, color: Colors.black), // Cambiado a Negro
-              onPressed: isLoading ? null : () => downloadPdfFile(widget.receipt['cufe']),
-            ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          SingleChildScrollView(
+        backgroundColor: const Color(0xFFF2F2F2), // Gris muy claro de fondo
+        appBar: AppBar(
+          title: const Text("Detalle de Factura",
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
+          centerTitle: true,
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black,
+          elevation: 0,
+          actions: [
+            if (_isCufeValid())
+              IconButton(
+                icon: const Icon(Icons.picture_as_pdf_outlined,
+                    color: Colors.black),
+                onPressed: () => downloadPdfFile(widget.receipt['cufe']),
+                tooltip: "Descargar PDF oficial",
+              ),
+          ],
+        ),
+        body: SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
                 _buildHeaderCard(),
                 const SizedBox(height: 16),
+                // 2. Cargamos la tarjeta correspondiente
                 isOcr ? _buildOcrDataCard() : _buildStandardDataCard(),
                 const SizedBox(height: 24),
                 _buildDeleteButton(),
               ],
-            ),
-          ),
-
-          if (isLoading)
-            Container(
-              width: double.infinity,
-              height: double.infinity,
-              color: Colors.white.withOpacity(0.98), 
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Lottie.asset('assets/download icon.json', width: 300),
-                  const SizedBox(height: 20),
-                  const Text(
-                    "Procesando PDF...",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
+            )));
   }
 
   Widget _buildHeaderCard() {
@@ -152,7 +156,12 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 4))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4))
+        ],
       ),
       child: Column(
         children: [
@@ -160,8 +169,11 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: Colors.black.withOpacity(0.05), borderRadius: BorderRadius.circular(12)),
-                child: const Icon(Icons.business_rounded, color: Colors.black, size: 24),
+                decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12)),
+                child: const Icon(Icons.business_rounded,
+                    color: Colors.black, size: 24),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -169,10 +181,16 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.receipt['company']?.toString().toUpperCase() ?? 'EMPRESA',
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, letterSpacing: 0.5),
+                      widget.receipt['company']?.toString().toUpperCase() ??
+                          'EMPRESA',
+                      style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5),
                     ),
-                    Text("NIT: ${widget.receipt['company_id'] ?? 'S/N'}", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    Text("NIT: ${widget.receipt['company_id'] ?? 'S/N'}",
+                        style:
+                            const TextStyle(fontSize: 12, color: Colors.grey)),
                   ],
                 ),
               ),
@@ -183,13 +201,21 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
             child: Divider(height: 1, thickness: 0.5),
           ),
           Text(
-            currencyFormat.format(double.tryParse(widget.receipt['price'].toString()) ?? 0),
-            style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900, color: Colors.black, letterSpacing: -1),
+            currencyFormat.format(
+                double.tryParse(widget.receipt['price'].toString()) ?? 0),
+            style: const TextStyle(
+                fontSize: 34,
+                fontWeight: FontWeight.w900,
+                color: Colors.black,
+                letterSpacing: -1),
           ),
           const SizedBox(height: 4),
           Text(
             "Emitida el: ${widget.receipt['date']?.toString() ?? 'S/F'}",
-            style: TextStyle(fontSize: 12, color: Colors.grey[600], fontWeight: FontWeight.w500),
+            style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -203,10 +229,16 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
       content: Column(
         children: [
           if (imageRendered != null) _buildImagePreview(),
-          _buildDataRow(Icons.person_outline, "Cliente", widget.receipt['customer']),
-          _buildDataRow(Icons.numbers_outlined, "Factura N°", widget.receipt['id_bill']),
+          _buildDataRow(
+              Icons.person_outline, "Cliente", widget.receipt['customer']),
+          _buildDataRow(
+              Icons.numbers_outlined, "Factura N°", widget.receipt['id_bill']),
           if (widget.receipt['iva'] != null && widget.receipt['iva'] != "0")
-             _buildDataRow(Icons.account_balance_wallet_outlined, "Impuestos (IVA)", currencyFormat.format(double.tryParse(widget.receipt['iva'].toString()) ?? 0)),
+            _buildDataRow(
+                Icons.account_balance_wallet_outlined,
+                "Impuestos (IVA)",
+                currencyFormat.format(
+                    double.tryParse(widget.receipt['iva'].toString()) ?? 0)),
           _buildCufeSection(),
         ],
       ),
@@ -221,7 +253,8 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
       content: Column(
         children: textLines.map((item) {
           List<String> parts = item.toString().split(':');
-          return _buildDataRow(Icons.arrow_right, parts[0].trim(), parts.length > 1 ? parts[1].trim() : "");
+          return _buildDataRow(Icons.arrow_right, parts[0].trim(),
+              parts.length > 1 ? parts[1].trim() : "");
         }).toList(),
       ),
     );
@@ -239,7 +272,8 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(11),
-        child: InteractiveViewer(child: Image.file(imageRendered!, fit: BoxFit.contain)),
+        child: InteractiveViewer(
+            child: Image.file(imageRendered!, fit: BoxFit.contain)),
       ),
     );
   }
@@ -252,13 +286,20 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
         children: [
           Icon(icon, size: 16, color: Colors.grey[400]),
           const SizedBox(width: 8),
-          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 13, fontWeight: FontWeight.w500)),
+          Text(label,
+              style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500)),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              value ?? "---", 
-              textAlign: TextAlign.end, 
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87),
+              value ?? "---",
+              textAlign: TextAlign.end,
+              style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                  color: Colors.black87),
               softWrap: true,
             ),
           ),
@@ -268,33 +309,59 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
   }
 
   Widget _buildCufeSection() {
-    if (widget.receipt['cufe'] == null || widget.receipt['cufe'] == "No encontrado") return const SizedBox.shrink();
+    if (widget.receipt['cufe'] == null ||
+        widget.receipt['cufe'] == "No encontrado")
+      return const SizedBox.shrink();
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(top: 15),
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: const Color(0xFFF5F5F5), borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey[200]!)),
+      decoration: BoxDecoration(
+          color: const Color(0xFFF5F5F5),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: Colors.grey[200]!)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text("CUFE / CÓDIGO SEGURO", style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1)),
+          const Text("CUFE / CÓDIGO SEGURO",
+              style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey,
+                  letterSpacing: 1)),
           const SizedBox(height: 4),
-          Text(widget.receipt['cufe'], style: const TextStyle(fontSize: 10, color: Colors.black54, fontFamily: 'monospace')),
+          Text(widget.receipt['cufe'],
+              style: const TextStyle(
+                  fontSize: 10,
+                  color: Colors.black54,
+                  fontFamily: 'monospace')),
         ],
       ),
     );
   }
 
-  Widget _buildInfoCard({required IconData icon, required String title, required Widget content}) {
+  Widget _buildInfoCard(
+      {required IconData icon,
+      required String title,
+      required Widget content}) {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
+      decoration: BoxDecoration(
+          color: Colors.white, borderRadius: BorderRadius.circular(16)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(children: [Icon(icon, size: 18, color: Colors.black87), const SizedBox(width: 8), Text(title, style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14))]),
-          const Padding(padding: EdgeInsets.symmetric(vertical: 15), child: Divider(height: 1, thickness: 0.5)),
+          Row(children: [
+            Icon(icon, size: 18, color: Colors.black87),
+            const SizedBox(width: 8),
+            Text(title,
+                style:
+                    const TextStyle(fontWeight: FontWeight.w800, fontSize: 14))
+          ]),
+          const Padding(
+              padding: EdgeInsets.symmetric(vertical: 15),
+              child: Divider(height: 1, thickness: 0.5)),
           content,
         ],
       ),
@@ -310,10 +377,15 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
       onPressed: () {
-        showDialog(context: context, builder: (_) => DeleteDialogWidget(item: widget.receipt, func: returnToReceipts));
+        showDialog(
+            context: context,
+            builder: (_) => DeleteDialogWidget(
+                item: widget.receipt, func: returnToReceipts));
       },
       icon: const Icon(Icons.delete_outline_rounded, size: 20),
-      label: const Text("ELIMINAR FACTURA", style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 1.2)),
+      label: const Text("ELIMINAR FACTURA",
+          style: TextStyle(
+              fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 1.2)),
     );
   }
 }
