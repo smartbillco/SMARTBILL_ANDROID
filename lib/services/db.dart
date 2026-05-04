@@ -1,27 +1,33 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
- class DatabaseConnection {
-  static final DatabaseConnection _instance = DatabaseConnection._internal();
+class DatabaseConnection {
+  static final DatabaseConnection _instance =
+      DatabaseConnection._internal();
+
   factory DatabaseConnection() => _instance;
+
   DatabaseConnection._internal();
-  
+
   Database? _db;
 
-  //Return the getter
+  /// Return database instance
   Future<Database> get db async {
     _db ??= await openDb();
     return _db!;
   }
 
-  Future openDb() async {
+  Future<Database> openDb() async {
+
     var databasesPath = await getDatabasesPath();
     var path = join(databasesPath, 'smartbill.db');
 
-    return _db = await openDatabase(path, version: 1,
+    return _db = await openDatabase(
+      path,
+      version: 2, // IMPORTANT: increase version
 
       onCreate: (Database db, int version) async {
-        
+
         await db.execute('''
           CREATE TABLE IF NOT EXISTS xml_files (
             _id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,6 +49,7 @@ import 'package:path/path.dart';
           CREATE TABLE IF NOT EXISTS colombian_bill (
             _id INTEGER PRIMARY KEY AUTOINCREMENT,
             bill_number TEXT NOT NULL,
+            company_name TEXT, -- NEW COLUMN
             date TEXT,
             time TEXT,
             nit TEXT,
@@ -92,7 +99,8 @@ import 'package:path/path.dart';
           )
         ''');
 
-        await db.execute('''CREATE TABLE IF NOT EXISTS ocr_receipts (
+        await db.execute('''
+          CREATE TABLE IF NOT EXISTS ocr_receipts (
             _id INTEGER PRIMARY KEY AUTOINCREMENT,
             userId TEXT NOT NULL,
             image TEXT,
@@ -100,15 +108,30 @@ import 'package:path/path.dart';
             date TEXT NOT NULL,
             company TEXT,
             nit TEXT NOT NULL,
-            user_document text NOT NULL,
-            amount real NOT NULL
+            user_document TEXT NOT NULL,
+            amount REAL NOT NULL
           )
         ''');
-
       },
-      onDowngrade: onDatabaseDowngradeDelete
+
+      /// MIGRATIONS
+      onUpgrade: (Database db, int oldVersion, int newVersion) async {
+
+        // Version 1 -> 2
+        if (oldVersion < 2) {
+
+          await db.execute('''
+            ALTER TABLE colombian_bill
+            ADD COLUMN company_name TEXT
+          ''');
+
+        }
+      },
+
+      onDowngrade: onDatabaseDowngradeDelete,
     );
   }
+
   Future<void> close() async {
     if (_db != null) {
       await _db!.close();
@@ -123,8 +146,6 @@ import 'package:path/path.dart';
 
     await deleteDatabase(path);
 
-    print("Couldn't delete database. Doesnt exists");
-    
+    print("Database deleted");
   }
-
 }

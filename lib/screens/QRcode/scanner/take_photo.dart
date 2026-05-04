@@ -49,28 +49,35 @@ class _TakePhotoScreenState extends State<TakePhotoScreen> {
       // 1. Capturar la imagen
       final XFile picture = await _controller!.takePicture();
 
-      // 2. Guardar permanentemente
+      // 2. Obtener el directorio base (Documentos funciona mejor en iOS/Android para archivos privados)
       final Directory appDir = await getApplicationDocumentsDirectory();
-      final String savePath = path.join(appDir.path, 'fotos_facturas');
-      await Directory(savePath).create(recursive: true);
+      
+      // 3. Crear la carpeta 'cufes'
+      final String savePath = path.join(appDir.path, 'cufes');
+      final Directory cufesDir = Directory(savePath);
+      
+      if (!await cufesDir.exists()) {
+        await cufesDir.create(recursive: true);
+      }
 
+      // 4. Definir nombre y ruta final
       final String fileName = 'Factura_${DateTime.now().millisecondsSinceEpoch}.jpg';
       final String finalPath = path.join(savePath, fileName);
 
+      // 5. Mover el archivo (copy es más seguro entre particiones que rename)
       await File(picture.path).copy(finalPath);
 
-      // 3. Notificar al cliente y redirigir
+      // 6. Notificar y redirigir
       if (!mounted) return;
       
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text("¡Foto guardada con éxito!"),
+          content: Text("¡Factura guardada en cufes!"),
           backgroundColor: Colors.green,
           duration: Duration(seconds: 2),
         ),
       );
 
-      // 4. Redirigir al Wrapper limpiando el stack de navegación
       Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (context) => const Wrapper()),
@@ -78,10 +85,10 @@ class _TakePhotoScreenState extends State<TakePhotoScreen> {
       );
 
     } catch (e) {
-      debugPrint("Error: $e");
+      debugPrint("Error al guardar en iOS/Android: $e");
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error al guardar: $e"), backgroundColor: Colors.red),
+        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => _isTakingPicture = false);

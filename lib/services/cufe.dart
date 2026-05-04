@@ -70,4 +70,6 @@ class CufeService {
   void dispose() {
     _textRecognizer.close();
   }
+
+
 }

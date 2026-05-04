@@ -1,6 +1,10 @@
+import 'dart:io';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:smartbill/screens/receipts/bill_detail_screen.dart';
+import 'package:smartbill/screens/receipts/cufe_detail_screen.dart';
 import 'package:smartbill/screens/receipts/receipt_widgets/delete_dialog.dart';
 import 'package:smartbill/screens/receipts/receipt_widgets/total_sum.dart';
 import 'package:smartbill/services/colombian_bill.dart';
@@ -21,6 +25,9 @@ class MyReceiptsPage extends StatefulWidget {
 }
 
 class _MyReceiptsPageState extends State<MyReceiptsPage> {
+  //Imagenes de Cufes
+  List<File> _cufesImages = [];
+
   //Colombian and peruvian bills stored in database
   final ColombianBill colombianBill = ColombianBill();
   final PeruvianBill peruvianBill = PeruvianBill();
@@ -49,6 +56,25 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
     super.initState();
     getReceipts();
     fetchAllCompanies();
+    loadCufesImages();
+  }
+
+  // Función para leer las fotos de la carpeta cufes
+  Future<void> loadCufesImages() async {
+    try {
+      final Directory appDir = await getApplicationDocumentsDirectory();
+      final String folderPath = path.join(appDir.path, 'cufes');
+      final Directory cufesDir = Directory(folderPath);
+
+      if (await cufesDir.exists()) {
+        final List<FileSystemEntity> entities = cufesDir.listSync();
+        setState(() {
+          _cufesImages = entities.whereType<File>().toList();
+        });
+      }
+    } catch (e) {
+      debugPrint("Error cargando imágenes: $e");
+    }
   }
 
 
@@ -115,9 +141,9 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
       Map<String, dynamic> newPdf = {
         '_id': item['_id'],
         'id_bill': item['cufe'],
-        'customer': 'Consumidor final',
+        'customer': item['customer_id'] ?? 'Consumidor final',
         'customer_id': 'Factura PDF',
-        'company': item['nit'],
+        'company': item['company_name'],
         'company_id': item['nit'],
         'price': item['total_amount'].toString(),
         'cufe': item['cufe'],
@@ -209,58 +235,137 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
   //Receipts screens
   @override
   Widget build(BuildContext context) {
-    return Padding(
-        padding: const EdgeInsets.fromLTRB(12, 20, 12, 42),
+    return SingleChildScrollView( // 1. Envolvemos todo para que la pantalla tenga scroll
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 20, 12, 50),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            TotalSumWidget(totalColombia: totalColombia, totalPeru: totalPeru, totalPanama: totalPanama),
+            TotalSumWidget(
+              totalColombia: totalColombia, 
+              totalPeru: totalPeru, 
+              totalPanama: totalPanama
+            ),
             const SizedBox(height: 20),
             
             companies.isEmpty
-            ? const Text("No hay compañias todavia...", style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),)
-            : DropdownButton<String>(
-              value: selectedValue,
-              hint: const Text('Buscar por compañia'),
-              isExpanded: true,
-              items: companies.map((value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (value) {
-                filterReceipts(value!);
-                setState(() {
-                  selectedValue = value;
-                });
-              },
-            ),
+                ? const Text(
+                    "No hay compañias todavia...", 
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
+                  )
+                : DropdownButton<String>(
+                    value: selectedValue,
+                    hint: const Text('Buscar por compañia'),
+                    isExpanded: true,
+                    items: companies.map((value) {
+                      return DropdownMenuItem<String>(
+                        value: value,
+                        child: Text(value),
+                      );
+                    }).toList(),
+                    onChanged: (value) {
+                      filterReceipts(value!);
+                      setState(() {
+                        selectedValue = value;
+                      });
+                    },
+                  ),
 
             const SizedBox(height: 14),
-            Expanded(
-              child: _fileContent.isNotEmpty
-                  ? ListView.builder(
+
+            // 2. Eliminamos el Expanded
+            _fileContent.isNotEmpty
+                ? ListView.builder(
+                    shrinkWrap: true, // 3. IMPORTANTE: Hace que la lista ocupe solo su contenido
+                    physics: const NeverScrollableScrollPhysics(), // 4. Desactivamos scroll interno
                     padding: const EdgeInsets.all(7),
-                      itemCount: filteredReceipts.length,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 5, horizontal: 0),
-                          child: Material(
-                            borderRadius:
-                                const BorderRadius.all(Radius.circular(10)),
-                            elevation: 12,
-                            shadowColor: const Color.fromARGB(255, 185, 185, 185),
-                            child: ListReceipts(fileContent: filteredReceipts, index: index, getReceipts: getReceipts,)
+                    itemCount: filteredReceipts.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 5, horizontal: 0),
+                        child: Material(
+                          borderRadius: const BorderRadius.all(Radius.circular(10)),
+                          elevation: 12,
+                          shadowColor: const Color.fromARGB(255, 185, 185, 185),
+                          child: ListReceipts(
+                            fileContent: filteredReceipts, 
+                            index: index, 
+                            getReceipts: getReceipts,
                           ),
-                        );
-                      },
-                    )
-                  : const Text("No hay archivos todavia...", style:TextStyle(fontSize: 18, fontWeight: FontWeight.w400)),
+                        ),
+                      );
+                    },
+                  )
+                : const Text(
+                    "No hay archivos todavia...", 
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
+                  ),
+
+            // 5. El widget ahora aparecerá justo después de la última factura
+            const SizedBox(height: 20),
+            const Text(
+              "Tus CUFE: ",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
             ),
-        ]),
-      );
+
+            const SizedBox(height: 10),
+
+            // Grid de imágenes capturadas
+            _cufesImages.isEmpty
+                ? const Text("No hay imagenes de CUFE guardadas.", style: TextStyle(color: Colors.grey))
+                : GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 8,
+                      mainAxisSpacing: 8,
+                    ),
+                    itemCount: _cufesImages.length,
+                    itemBuilder: (context, index) {
+                      return GestureDetector(
+                        onTap: () async {
+                          // 1. ESPERAMOS el resultado de la pantalla de detalle
+                          final bool? wasDeleted = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => CufesDetailScreen(imageFile: _cufesImages[index]),
+                            ),
+                          );
+
+                          // 2. Si se eliminó (wasDeleted es true), recargamos la lista del storage
+                          if (wasDeleted == true) {
+                            await loadCufesImages();
+                            
+                            // Opcional: mostrar un mensaje de confirmación
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Imagen eliminada de la lista")),
+                              );
+                            }
+                          }
+                        },
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Hero(
+                            tag: _cufesImages[index].path,
+                            child: Image.file(
+                              _cufesImages[index],
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -303,7 +408,7 @@ class _ListReceiptsState extends State<ListReceipts> {
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(widget.fileContent[widget.index]['company'].length > 25 ? widget.fileContent[widget.index]['company'].substring(0,25) : widget.fileContent[widget.index]['company'], style: const TextStyle(fontSize: 15)),
+          Text(widget.fileContent[widget.index]['company'].length > 40 ? "${widget.fileContent[widget.index]['company'].substring(0,40)}..." : widget.fileContent[widget.index]['company'] ?? "Razon social", style: const TextStyle(fontSize: 15)),
           Text(widget.fileContent[widget.index]['company_id'], style: const TextStyle(fontSize: 15)),
           Text("Valor: ${NumberFormat('#,##0.00', 'en_US').format(double.parse(widget.fileContent[widget.index]['price']))}", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         ]
@@ -316,7 +421,8 @@ class _ListReceiptsState extends State<ListReceipts> {
               item: widget.fileContent[widget.index],
               func: widget.getReceipts)); 
           },
-          icon: const Icon(Icons.delete, size: 25, color: Colors.redAccent)),
+          icon: const Icon(Icons.delete, size: 25, color: Colors.redAccent)
+      ),
 
     );
   }

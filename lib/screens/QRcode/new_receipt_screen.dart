@@ -140,6 +140,7 @@ class _SingleReceiptState extends State<SingleReceipt> {
 
     final newReceipt = {
       'bill_number': widget.cufe,
+      'company_name': widget.companyName,
       'date': widget.date,
       'nit': widget.nit,
       'customer_id': widget.buyerId,
@@ -179,8 +180,8 @@ class _SingleReceiptState extends State<SingleReceipt> {
             Lottie.asset('assets/download icon.json', width: 320),
             const SizedBox(height: 20),
             const Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: const Text(
+              padding: EdgeInsets.all(20.0),
+              child: Text(
                 "Descargando factura. Esto puede tardar unos segundos...",
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),

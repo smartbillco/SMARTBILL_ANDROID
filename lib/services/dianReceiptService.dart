@@ -55,6 +55,8 @@ class DianReceiptService {
       final Map<String, dynamic> data = jsonDecode(response.body);
       final DianPdf pdf = DianPdf.fromJson(data);
 
+      print("Finished getting PDF");
+
       return pdf;
 
     } else {
@@ -65,6 +67,8 @@ class DianReceiptService {
 
   //Convert base 64 to pdf file and save.
   Future<File?> base64ToPdfAndSave(String base64Pdf) async {
+
+    print("Started saving file");
 
     try {
 

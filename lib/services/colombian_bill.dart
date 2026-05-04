@@ -33,7 +33,7 @@ class ColombianBill {
           'id_bill': bill['bill_number'],
           'customer': bill['customer_id'],
           'customer_id': bill['customer_id'],
-          'company': bill['nit'],
+          'company': bill['company_name'],
           'company_id': bill['nit'],
           'price': bill['total_amount'],
           'cufe': bill['cufe'],

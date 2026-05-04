@@ -8,7 +8,6 @@ import 'package:smartbill/screens/QRcode/new_receipt_screen.dart';
 import 'package:smartbill/screens/QRcode/qrcode_screen.dart';
 import 'package:smartbill/screens/QRcode/scanner/take_photo.dart';
 import 'package:smartbill/services/cufe.dart';
-
 import 'scanner_overlay.dart';
 
 class QRScanner extends StatefulWidget {
@@ -44,16 +43,14 @@ class _QRScannerState extends State<QRScanner> {
       if (shouldScan == true) {
         await _scanCufeFromPhoto();
       } else {
-        // Si cancela, volvemos a activar el scanner de QR
         _resetScanner();
       }
     });
   }
 
   void _resetScanner() {
-    setState(() {
-      _scanning = true;
-    });
+    if (!mounted) return;
+    setState(() => _scanning = true);
     scannerController.start();
     _startTimer();
   }
@@ -67,8 +64,15 @@ class _QRScannerState extends State<QRScanner> {
         content: const Text("¿Deseas intentar extraer el CUFE tomando una foto manual de la factura?"),
         actions: [
           TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            }, 
+            child: const Text("Cancelar", style: TextStyle(color: Colors.red))
+          ),
+          TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("No, reintentar QR"),
+            child: const Text("Reintentar QR"),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -122,11 +126,11 @@ class _QRScannerState extends State<QRScanner> {
       final inputImage = InputImage.fromFilePath(croppedPath);
       final cufe = await _cufeService.processImage(inputImage);
 
-      // Verificación estricta del CUFE extraído por OCR
-      if (cufe != null && (cufe.length == 64 || cufe.length == 96)) {
+      // El RegExp aquí valida si el CUFE tiene 64 o 96 caracteres hex
+      if (cufe != null && RegExp(r'^[a-fA-F0-9]{64}$|^[a-fA-F0-9]{96}$').hasMatch(cufe)) {
         await _navigate(ReceiptDisplayScreen(cufe: cufe));
       } else {
-        _showError("No se pudo leer el CUFE con nitidez. Por favor, intenta de nuevo.");
+        _showError("No se pudo leer un CUFE válido. Intenta de nuevo.");
       }
     } catch (e) {
       _showError("Error al procesar la imagen");
@@ -148,35 +152,21 @@ class _QRScannerState extends State<QRScanner> {
 
   void _showError(String message) {
     if (!mounted) return;
-
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.redAccent,
-        duration: const Duration(seconds: 3),
-      ),
+      SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
     );
-    
-    // Después del error, devolvemos al usuario al estado de escaneo de QR
     _resetScanner();
   }
 
-  // Mejorado para ser más estricto con los formatos de la DIAN
-  bool _isValidCufe(String cufe) {
-    final cleanCufe = cufe.trim().toLowerCase();
-    return RegExp(r'^[a-f0-9]{64}$').hasMatch(cleanCufe) || 
-           RegExp(r'^[a-f0-9]{96}$').hasMatch(cleanCufe);
-  }
-
   String? extractCufe(String input) {
-    // Intento 1: Desde URL
+    // Intento 1: Buscar en parámetros de URL
     try {
       final uri = Uri.parse(input);
       final cufe = uri.queryParameters['documentkey'] ?? uri.queryParameters['DocKey'];
-      if (cufe != null && _isValidCufe(cufe)) return cufe;
+      if (cufe != null) return cufe;
     } catch (_) {}
 
-    // Intento 2: Regex directo sobre el rawValue
+    // Intento 2: Buscar cadena de 64 o 96 caracteres hexadecimales
     final match = RegExp(r'[a-fA-F0-9]{96}|[a-fA-F0-9]{64}').firstMatch(input);
     return match?.group(0);
   }
@@ -184,7 +174,11 @@ class _QRScannerState extends State<QRScanner> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Escanear Factura"), backgroundColor: Colors.transparent, elevation: 0),
+      appBar: AppBar(
+        title: const Text("Escanear Factura"), 
+        backgroundColor: Colors.transparent, 
+        elevation: 0
+      ),
       extendBodyBehindAppBar: true,
       body: Stack(
         children: [
@@ -204,7 +198,7 @@ class _QRScannerState extends State<QRScanner> {
               if (cufe != null) {
                 await _navigate(ReceiptDisplayScreen(cufe: cufe));
               } else {
-                // Si el QR tiene datos pero no un CUFE válido, vamos a una pantalla de soporte o error
+                // Si no es un CUFE pero el QR tiene datos, enviamos a pantalla de soporte
                 await _navigate(QrcodeScreen(qrResult: raw));
               }
             },

@@ -2,27 +2,64 @@ import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:smartbill/providers/crypto_provider.dart';
 import 'package:workmanager/workmanager.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:smartbill/screens/splash/splash.dart';
 import 'package:smartbill/services/auth.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
-import 'package:smartbill/services/crypto_provider.dart';
 import 'package:smartbill/services/db.dart';
 import 'package:smartbill/services/settings.dart';
 import 'package:smartbill/services/dianReceiptService.dart'; // Tu servicio
 import './route_observer.dart';
 
 // Instancia global de notificaciones
-final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
+
+Future<void> initializeNotifications({
+  bool requestPermission = false,
+}) async {
+
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+
+  const InitializationSettings initializationSettings =
+      InitializationSettings(
+    android: initializationSettingsAndroid,
+  );
+
+  await flutterLocalNotificationsPlugin.initialize(
+    settings: initializationSettings,
+  );
+
+  // ONLY request permission from main UI isolate
+  if (requestPermission) {
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
+  }
+}
 
 // Workmanager
 @pragma('vm:entry-point')
 void callbackDispatcher() {
+
   Workmanager().executeTask((task, inputData) async {
+
+    WidgetsFlutterBinding.ensureInitialized();
+
+    await Firebase.initializeApp();
+
+    // IMPORTANT:
+    // Initialize notifications WITHOUT requesting permission
+    await initializeNotifications();
+
     if (task == "downloadPdfTask") {
+
       final String? cufe = inputData?['cufe'];
-      
+
       debugPrint("--- [WORKMANAGER] Iniciando tarea para CUFE: $cufe ---");
 
       if (cufe == null) {
@@ -30,99 +67,137 @@ void callbackDispatcher() {
         return Future.value(false);
       }
 
-      // Instanciamos tu servicio
       final dianService = DianReceiptService();
 
       try {
-        
-        debugPrint("--- [WORKMANAGER] Paso 1: Llamando a getPdfDian... ---");
-        final dianPdfResponse = await dianService.getPdfDian(cufe);
 
-        if (dianPdfResponse.pdf.isNotEmpty) {
-          
-          
-          debugPrint("--- [WORKMANAGER] Paso 2: Convirtiendo Base64 a archivo... ---");
-          final File? savedFile = await dianService.base64ToPdfAndSave(dianPdfResponse.pdf);
+        debugPrint("--- PASO A ---");
 
-          if (savedFile != null && await savedFile.exists()) {
-            debugPrint("--- [WORKMANAGER] ÉXITO: PDF guardado en ${savedFile.path} ---");
+        final dianPdfResponse =
+            await dianService.getPdfDian(cufe);
 
-            await _showNotification(
-              "Factura Descargada", 
-              "El PDF oficial ha sido guardado exitosamente.",
-              isError: false
-            );
-            return Future.value(true);
-          } else {
-            throw Exception("El archivo no se pudo crear correctamente.");
-          }
-        } else {
-          throw Exception("La API no devolvió contenido en base64.");
+        debugPrint("--- PASO B ---");
+
+        if (dianPdfResponse.pdf.isEmpty) {
+          throw Exception("La API no devolvió contenido base64.");
         }
-      } catch (e) {
-        debugPrint("--- [WORKMANAGER] EXCEPCIÓN: $e ---");
-        
+
+        debugPrint("--- PASO C ---");
+
+        final File? savedFile =
+            await dianService.base64ToPdfAndSave(
+              dianPdfResponse.pdf,
+            );
+
+        debugPrint("--- PASO D ---");
+
+        if (savedFile != null && await savedFile.exists()) {
+
+          debugPrint(
+              "--- PDF guardado en ${savedFile.path} ---");
+
+          await _showNotification(
+            "Factura Descargada",
+            "El PDF oficial ha sido guardado exitosamente.",
+            isError: false,
+          );
+
+          return Future.value(true);
+
+        } else {
+          throw Exception(
+              "El archivo no se pudo crear correctamente.");
+        }
+
+      } catch (e, stack) {
+
+        debugPrint("--- ERROR WORKMANAGER ---");
+        debugPrint(e.toString());
+        debugPrint(stack.toString());
+
         await _showNotification(
-          "Error de Descarga", 
-          "No pudimos procesar tu factura. Intenta de nuevo más tarde.",
-          isError: true
+          "Error de Descarga",
+          "No pudimos procesar tu factura.",
+          isError: true,
         );
+
         return Future.value(false);
       }
     }
+
     return Future.value(true);
   });
 }
 
 // Notificar al cliente
-Future<void> _showNotification(String title, String body, {required bool isError}) async {
-  final AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-    isError ? 'error_channel' : 'downloads_channel',
-    isError ? 'Errores Smartbill' : 'Descargas Smartbill',
-    channelDescription: 'Estado de las descargas de facturas',
+Future<void> _showNotification(
+  String title,
+  String body, {
+  required bool isError,
+}) async {
+
+  const AndroidNotificationDetails androidDetails =
+      AndroidNotificationDetails(
+    'downloads_channel',
+    'Descargas Smartbill',
+    channelDescription:
+        'Estado de las descargas de facturas',
     importance: Importance.max,
     priority: Priority.high,
-    color: isError ? Colors.red : Colors.blue,
   );
 
-  final NotificationDetails platformDetails = NotificationDetails(android: androidDetails);
+  const NotificationDetails platformDetails =
+      NotificationDetails(
+    android: androidDetails,
+  );
 
   await flutterLocalNotificationsPlugin.show(
-    id: isError ? 1 : 0, 
-    title: title, 
-    body: body, 
+    id: isError ? 1 : 0,
+    title: title,
+    body: body,
     notificationDetails: platformDetails,
   );
 }
 
+
+// -------- Main------------ //
 Future<void> main() async {
+
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Inicializar Notificaciones
-  const AndroidInitializationSettings initializationSettingsAndroid = 
-      AndroidInitializationSettings('@mipmap/launcher_icon');
-  const InitializationSettings initializationSettings = 
-      InitializationSettings(android: initializationSettingsAndroid);
-  await flutterLocalNotificationsPlugin.initialize(settings: initializationSettings);
-
-  // Inicializar Workmanager
-  await Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
-
-  // Otros servicios
-  await DatabaseConnection().db;
-  await FlutterDownloader.initialize(debug: false, ignoreSsl: true);
   await Firebase.initializeApp();
+
+  await initializeNotifications(
+    requestPermission: true,
+  );
+
+  await Workmanager().initialize(
+    callbackDispatcher,
+    isInDebugMode: true,
+  );
+
+  await DatabaseConnection().db;
+  await FlutterDownloader.initialize(
+    debug: false,
+    ignoreSsl: true,
+  );
 
   runApp(
     MultiProvider(
       providers: [
         StreamProvider.value(
-          value: AuthService().user, 
+          value: AuthService().user,
           initialData: null,
           catchError: (_, __) => null,
         ),
-        ChangeNotifierProvider(create: (_) => SettingsProvider()),
-        ChangeNotifierProvider(create: (_) => CryptoProvider()..fetchCryptoData()),
+        ChangeNotifierProvider(
+          create: (_) => SettingsProvider(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) =>
+              CryptoProvider()..initializeData(),
+        ),
+
       ],
       child: const MyApp(),
     ),
