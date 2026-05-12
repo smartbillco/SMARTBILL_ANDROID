@@ -3,7 +3,7 @@ import 'package:lottie/lottie.dart';
 import 'package:smartbill/models/dian_receipts.dart';
 import 'package:smartbill/screens/receipts/receipt_screen.dart';
 import 'package:smartbill/services/colombian_bill.dart';
-import 'package:smartbill/services/dianReceiptService.dart';
+import 'package:smartbill/services/dian_receipt_service.dart';
 
 class ReceiptDisplayScreen extends StatefulWidget {
   final String cufe;
@@ -41,8 +41,10 @@ class _ReceiptScreenState extends State<ReceiptDisplayScreen> {
                 ],
               ),
             );
+            
           } else if (snapshot.hasError) {
             return _buildErrorState();
+
           } else if (snapshot.hasData) {
             Receipt data = snapshot.data;
             return SingleReceipt(
@@ -115,21 +117,30 @@ class SingleReceipt extends StatefulWidget {
 }
 
 class _SingleReceiptState extends State<SingleReceipt> {
+
   final DianReceiptService dianReceiptService = DianReceiptService();
   ColombianBill colombianBill = ColombianBill();
   bool isLoading = false;
 
   Future<void> downloadPdfFile(String cufe) async {
+
     setState(() => isLoading = true);
+
     try {
       final pdfData = await dianReceiptService.getPdfDian(cufe);
-      await dianReceiptService.base64ToPdfAndSave(pdfData.pdf);
+      await dianReceiptService.base64ToPdfAndSave(pdfData.pdf, cufe);
+
       if (!mounted) return;
       Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const ReceiptScreen()));
+
     } catch (e) {
+
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+
     } finally {
+
       if (mounted) setState(() => isLoading = false);
+
     }
   }
 
@@ -160,11 +171,15 @@ class _SingleReceiptState extends State<SingleReceipt> {
       print("Error: $e");
 
       if(mounted) {
+
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Parece que no se pudo guardar la factura")));
+      
       }
 
     } finally {
+
       if (mounted) setState(() => isLoading = false);
+
     }
 
   }

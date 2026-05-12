@@ -3,7 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:smartbill/screens/receipts/receipt_screen.dart';
 import 'package:smartbill/services/colombian_bill.dart';
-import 'package:smartbill/services/dianReceiptService.dart';
+import 'package:smartbill/services/dian_receipt_service.dart';
 import 'package:smartbill/services/qr_handler.dart';
 import 'package:smartbill/services/peruvian_bill.dart';
 
@@ -164,7 +164,7 @@ class _ColombiaCardState extends State<ColombiaCard> {
     try {
       final pdfData = await dianReceiptService.getPdfDian(cufe);
 
-      await dianReceiptService.base64ToPdfAndSave(pdfData.pdf);
+      await dianReceiptService.base64ToPdfAndSave(pdfData.pdf, cufe);
 
       print("Finished: ${pdfData.pdf}");
 

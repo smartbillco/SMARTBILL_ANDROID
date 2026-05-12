@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:smartbill/screens/wrapper.dart';
+import 'package:smartbill/screens/settings/settings.dart';
 import 'package:smartbill/services/custom_user.dart';
 
 class UpdateAddressScreen extends StatefulWidget {
@@ -28,7 +28,7 @@ class _UpdateAddressScreenState extends State<UpdateAddressScreen> {
       if(mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Dirreción ha sido actualizada actualizado")));
       }
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const Wrapper())); 
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const SettingsScreen())); 
 
     } catch(e) {
 

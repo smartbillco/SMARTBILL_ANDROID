@@ -25,14 +25,10 @@ class MyReceiptsPage extends StatefulWidget {
 }
 
 class _MyReceiptsPageState extends State<MyReceiptsPage> {
-  //Imagenes de Cufes
   List<File> _cufesImages = [];
 
-  //Colombian and peruvian bills stored in database
   final ColombianBill colombianBill = ColombianBill();
   final PeruvianBill peruvianBill = PeruvianBill();
-
-  //Handle of XML stored
   final OcrReceiptsService ocrService = OcrReceiptsService();
   final XmlColombia xmlColombia = XmlColombia();
   final XmlPeru xmlPeru = XmlPeru();
@@ -40,7 +36,6 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
   final Xmlhandler xmlhandler = Xmlhandler();
   final PdfService pdfService = PdfService();
 
-  //Handling sums
   double totalColombia = 0;
   double totalPeru = 0;
   double totalPanama = 0;
@@ -49,17 +44,19 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
   String? selectedValue;
   List<dynamic> filteredReceipts = [];
 
-
-  //Initstate
   @override
   void initState() {
     super.initState();
-    getReceipts();
-    fetchAllCompanies();
-    loadCufesImages();
+    _loadAllData();
   }
 
-  // Función para leer las fotos de la carpeta cufes
+  // Sequence initialization to prevent race conditions
+  Future<void> _loadAllData() async {
+    await getReceipts();
+    await fetchAllCompanies();
+    await loadCufesImages();
+  }
+
   Future<void> loadCufesImages() async {
     try {
       final Directory appDir = await getApplicationDocumentsDirectory();
@@ -68,19 +65,18 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
 
       if (await cufesDir.exists()) {
         final List<FileSystemEntity> entities = cufesDir.listSync();
-        setState(() {
-          _cufesImages = entities.whereType<File>().toList();
-        });
+        if (mounted) {
+          setState(() {
+            _cufesImages = entities.whereType<File>().toList();
+          });
+        }
       }
     } catch (e) {
       debugPrint("Error cargando imágenes: $e");
     }
   }
 
-
-
-  //Get all XML files from sqlite
-  void getReceipts() async {
+  Future<void> getReceipts() async {
     var ocrReceipts = await ocrService.fetchOcrReceipts();
     var xmlFiles = await xmlhandler.getXmls();
     var pdfFiles = await pdfService.fetchAllPdfs();
@@ -89,55 +85,33 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
     double totalPaidPeru = 0;
     double totalPaidPanama = 0;
 
-    for(var item in ocrReceipts) {
+    for (var item in ocrReceipts) {
       totalPaidColombia += double.parse(item['price']);
       myFiles.add(item);
     }
 
-
     for (var item in xmlFiles) {
-
       XmlDocument xmlDocument = XmlDocument.parse(item['xml_text']);
-
       Map parsedDoc = xmlhandler.xmlToMap(xmlDocument.rootElement);
 
-      if(xmlDocument.findAllElements('cac:Signature').isNotEmpty) {
-        //Peru logic
+      if (xmlDocument.findAllElements('cac:Signature').isNotEmpty) {
         final Map newPeruvianXml = xmlPeru.parsePeruvianXml(item['_id'], parsedDoc, xmlDocument);
-
         totalPaidPeru += double.parse(newPeruvianXml['price']);
-
         myFiles.add(newPeruvianXml);
-
-      } else if(xmlDocument.findAllElements('rFE').isNotEmpty) {
-
+      } else if (xmlDocument.findAllElements('rFE').isNotEmpty) {
         final Map newPanamanianXml = xmlPanama.parsedPanamaXml(item['_id'], xmlDocument);
-
-
         totalPaidPanama += double.parse(newPanamanianXml['price']);
-
         myFiles.add(newPanamanianXml);
-
       } else {
-
-        //Colombian logic
         final String cDataContent = xmlColombia.extractCData(xmlDocument);
-
         final XmlDocument xmlCData = xmlColombia.parseCDataToXml(cDataContent);
-
         final Map newColombianXml = xmlColombia.parseColombianXml(item['_id'], parsedDoc, xmlCData);
-
         totalPaidColombia += double.parse(newColombianXml['price']);
-
         myFiles.add(newColombianXml);
-
-        
       }
-      
     }
 
-    for(var item in pdfFiles) {
-
+    for (var item in pdfFiles) {
       Map<String, dynamic> newPdf = {
         '_id': item['_id'],
         'id_bill': item['cufe'],
@@ -150,30 +124,23 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
         'date': item['date'],
         'currency': 'PDF'
       };
-
       totalPaidColombia += item['total_amount'];
-
       myFiles.add(newPdf);
-
     }
 
-    //Get colombian bills saved in database
     var bills = await colombianBill.getColombianBills();
-    for(var bill in bills) {
+    for (var bill in bills) {
       Map newMap = colombianBill.parseColombianBills(bill);
       totalPaidColombia += double.parse(newMap['price']);
       myFiles.add(newMap);
-      
     }
 
     var peruBills = await peruvianBill.getPeruvianBills();
-    for(var bill in peruBills) {
+    for (var bill in peruBills) {
       Map newMap = peruvianBill.parsePeruvianBills(bill);
       totalPaidPeru += double.parse(newMap['price']);
-
       myFiles.add(newMap);
     }
-
 
     if (mounted) {
       setState(() {
@@ -186,71 +153,65 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
     }
   }
 
-
-  //Get all the companies
   Future<void> fetchAllCompanies() async {
+    // Artificial delay for UI smoothness
+    await Future.delayed(const Duration(milliseconds: 500));
 
-    Future.delayed(const Duration(milliseconds: 1000), () {
-      List<String> myCompanies = [
-        ..._fileContent
-            .map((bill) => bill['company']?.toString().trim() ?? '')
-            .where((company) => company.isNotEmpty)
-            .map((company) => company.toUpperCase()) // normalize for uniqueness
-            .toSet()
-      ];
+    if (!mounted) return;
 
+    List<String> myCompanies = _fileContent
+        .map((bill) => bill['company']?.toString().trim() ?? '')
+        .where((company) => company.isNotEmpty)
+        .map((company) => company.toUpperCase())
+        .toSet()
+        .toList();
+
+    if (mounted) {
       setState(() {
-        companies.addAll(myCompanies);
+        companies = ['Todas las empresas', ...myCompanies];
       });
-
-      print("Companies: $companies");
-    });
-
+    }
   }
 
   void filterReceipts(String value) {
-    
-      if(value == 'Todas las empresas') {
-        filteredReceipts = _fileContent;
-      } else {
-        filteredReceipts = _fileContent
-        .where((bill) => bill['company'].contains(value))
-        .toList();
-      }
-
-      double totalPrice = filteredReceipts.fold(0.0, (sum, bill) {
-        return sum + double.tryParse(bill['price'] ?? '0')!;
-      });
-
-      setState(() {
-        totalColombia = totalPrice;
-        totalPanama = totalPrice;
-        totalPeru = totalPrice;
-      });
-
-      
+    List<dynamic> results = [];
+    if (value == 'Todas las empresas') {
+      results = _fileContent;
+    } else {
+      results = _fileContent
+          .where((bill) => bill['company']?.toString().toUpperCase() == value)
+          .toList();
     }
-      
 
-  //Receipts screens
+    double totalPrice = results.fold(0.0, (sum, bill) {
+      return sum + (double.tryParse(bill['price']?.toString() ?? '0') ?? 0.0);
+    });
+
+    setState(() {
+      filteredReceipts = results;
+      totalColombia = totalPrice;
+      totalPanama = totalPrice;
+      totalPeru = totalPrice;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView( // 1. Envolvemos todo para que la pantalla tenga scroll
+    return SingleChildScrollView(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 20, 12, 50),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TotalSumWidget(
-              totalColombia: totalColombia, 
-              totalPeru: totalPeru, 
-              totalPanama: totalPanama
+              totalColombia: totalColombia,
+              totalPeru: totalPeru,
+              totalPanama: totalPanama,
             ),
             const SizedBox(height: 20),
-            
-            companies.isEmpty
+            companies.length <= 1
                 ? const Text(
-                    "No hay compañias todavia...", 
+                    "No hay compañias todavia...",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
                   )
                 : DropdownButton<String>(
@@ -264,20 +225,19 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
                       );
                     }).toList(),
                     onChanged: (value) {
-                      filterReceipts(value!);
-                      setState(() {
-                        selectedValue = value;
-                      });
+                      if (value != null) {
+                        filterReceipts(value);
+                        setState(() {
+                          selectedValue = value;
+                        });
+                      }
                     },
                   ),
-
             const SizedBox(height: 14),
-
-            // 2. Eliminamos el Expanded
-            _fileContent.isNotEmpty
+            filteredReceipts.isNotEmpty
                 ? ListView.builder(
-                    shrinkWrap: true, // 3. IMPORTANTE: Hace que la lista ocupe solo su contenido
-                    physics: const NeverScrollableScrollPhysics(), // 4. Desactivamos scroll interno
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
                     padding: const EdgeInsets.all(7),
                     itemCount: filteredReceipts.length,
                     itemBuilder: (context, index) {
@@ -288,20 +248,18 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
                           elevation: 12,
                           shadowColor: const Color.fromARGB(255, 185, 185, 185),
                           child: ListReceipts(
-                            fileContent: filteredReceipts, 
-                            index: index, 
+                            fileContent: filteredReceipts,
+                            index: index,
                             getReceipts: getReceipts,
                           ),
                         ),
                       );
                     },
                   )
-                : const Text(
-                    "No hay archivos todavia...", 
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w400),
+                : const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                    child: Center(child: Text("No hay archivos todavia...", style: TextStyle(fontSize: 18))),
                   ),
-
-            // 5. El widget ahora aparecerá justo después de la última factura
             const SizedBox(height: 20),
             const Text(
               "Tus CUFE: ",
@@ -311,10 +269,7 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
                 color: Colors.grey,
               ),
             ),
-
             const SizedBox(height: 10),
-
-            // Grid de imágenes capturadas
             _cufesImages.isEmpty
                 ? const Text("No hay imagenes de CUFE guardadas.", style: TextStyle(color: Colors.grey))
                 : GridView.builder(
@@ -329,7 +284,6 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
                     itemBuilder: (context, index) {
                       return GestureDetector(
                         onTap: () async {
-                          // 1. ESPERAMOS el resultado de la pantalla de detalle
                           final bool? wasDeleted = await Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -337,14 +291,11 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
                             ),
                           );
 
-                          // 2. Si se eliminó (wasDeleted es true), recargamos la lista del storage
                           if (wasDeleted == true) {
                             await loadCufesImages();
-                            
-                            // Opcional: mostrar un mensaje de confirmación
                             if (mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text("Imagen eliminada de la lista")),
+                                const SnackBar(content: Text("Imagen eliminada")),
                               );
                             }
                           }
@@ -369,61 +320,61 @@ class _MyReceiptsPageState extends State<MyReceiptsPage> {
   }
 }
 
-
-
-//Tiles for the receipts
-class ListReceipts extends StatefulWidget {
-  final dynamic fileContent;
+class ListReceipts extends StatelessWidget {
+  final List<dynamic> fileContent;
   final int index;
   final Function getReceipts;
-  const ListReceipts({super.key, required this.fileContent, required this.index, required this.getReceipts});
 
-  @override
-  State<ListReceipts> createState() => _ListReceiptsState();
-}
+  const ListReceipts({
+    super.key,
+    required this.fileContent,
+    required this.index,
+    required this.getReceipts,
+  });
 
-class _ListReceiptsState extends State<ListReceipts> {
-
-  void redirectToBillDetail(Map receipt) {
+  void redirectToBillDetail(BuildContext context, Map receipt) {
     Navigator.push(context, MaterialPageRoute(builder: (context) => BillDetailScreen(receipt: receipt)));
   }
 
-
-  @override
-  void initState() {
-    super.initState();
-  } 
-
   @override
   Widget build(BuildContext context) {
+    final receipt = fileContent[index];
+    final String company = receipt['company'] ?? "Razon social";
 
     return ListTile(
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(15), // Rounded corners
+        borderRadius: BorderRadius.circular(15),
       ),
-      onTap: () => redirectToBillDetail(widget.fileContent[widget.index]),
+      onTap: () => redirectToBillDetail(context, receipt),
       contentPadding: const EdgeInsets.fromLTRB(10, 5, 5, 3),
       tileColor: const Color.fromARGB(244, 238, 238, 238),
-      title: Text(widget.fileContent[widget.index]['customer'], style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+      title: Text(receipt['customer'] ?? 'Consumidor', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(widget.fileContent[widget.index]['company'].length > 40 ? "${widget.fileContent[widget.index]['company'].substring(0,40)}..." : widget.fileContent[widget.index]['company'] ?? "Razon social", style: const TextStyle(fontSize: 15)),
-          Text(widget.fileContent[widget.index]['company_id'], style: const TextStyle(fontSize: 15)),
-          Text("Valor: ${NumberFormat('#,##0.00', 'en_US').format(double.parse(widget.fileContent[widget.index]['price']))}", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        ]
+          Text(
+            company.length > 40 ? "${company.substring(0, 40)}..." : company,
+            style: const TextStyle(fontSize: 15),
+          ),
+          Text(receipt['company_id'] ?? '', style: const TextStyle(fontSize: 15)),
+          Text(
+            "Valor: ${NumberFormat('#,##0.00', 'en_US').format(double.parse(receipt['price'] ?? '0'))}",
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+          ),
+        ],
       ),
-      trailing:  IconButton(
-         onPressed: () {
-           showDialog(
-             context: context,
-             builder: (_) => DeleteDialogWidget(
-              item: widget.fileContent[widget.index],
-              func: widget.getReceipts)); 
-          },
-          icon: const Icon(Icons.delete, size: 25, color: Colors.redAccent)
+      trailing: IconButton(
+        onPressed: () {
+          showDialog(
+            context: context,
+            builder: (_) => DeleteDialogWidget(
+              item: receipt,
+              func: getReceipts,
+            ),
+          );
+        },
+        icon: const Icon(Icons.delete, size: 25, color: Colors.redAccent),
       ),
-
     );
   }
 }

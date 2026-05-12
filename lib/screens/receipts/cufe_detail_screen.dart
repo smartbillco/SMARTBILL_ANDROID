@@ -18,6 +18,7 @@ class _CufesDetailScreenState extends State<CufesDetailScreen> {
   String _extractedText = "Procesando texto...";
   String _fileDate = "";
   String? _detectedCufe;
+  bool _isDownloading = false; // Control del letrero persistente
 
   // El motor de reconocimiento de texto de Google ML Kit
   final TextRecognizer _textRecognizer =
@@ -28,6 +29,12 @@ class _CufesDetailScreenState extends State<CufesDetailScreen> {
     super.initState();
     _loadFileData();
     _processImageWithOCR();
+  }
+
+  @override
+  void dispose() {
+    _textRecognizer.close();
+    super.dispose();
   }
 
   // Extraer metadata del archivo
@@ -52,7 +59,6 @@ class _CufesDetailScreenState extends State<CufesDetailScreen> {
           await _textRecognizer.processImage(inputImage);
 
       if (mounted) {
-        // Pasamos el texto completo a la nueva función de anclaje
         final String? cufe = _findCufe(recognizedText.text);
 
         setState(() {
@@ -70,21 +76,13 @@ class _CufesDetailScreenState extends State<CufesDetailScreen> {
     }
   }
 
-  @override
-  void dispose() {
-    // IMPORTANTE: Liberar el recurso del OCR para evitar fugas de memoria
-    _textRecognizer.close();
-    super.dispose();
-  }
-
-  //Encontrar y extraer el CUFE
+  // Encontrar y extraer el CUFE
   String? _findCufe(String text) {
     String searchTitle = text.toUpperCase();
     int index = searchTitle.indexOf("CUFE");
     if (index == -1) index = searchTitle.indexOf("CUDE");
 
     if (index != -1) {
-
       String rawPart = text.substring(index + 4);
       String cleanStart = rawPart.replaceFirst(RegExp(r'^[\s\:\-]+'), '');
       String solidBlock = cleanStart.replaceAll(RegExp(r'\s+'), '');
@@ -92,71 +90,64 @@ class _CufesDetailScreenState extends State<CufesDetailScreen> {
       if (solidBlock.length >= 96) {
         return solidBlock.substring(0, 96);
       }
-
       return solidBlock.isNotEmpty ? solidBlock : null;
     }
     return null;
   }
 
-  //Intentar descargar en background
+  // Intentar descargar en background
   void _startBackgroundDownload() {
-    if (_detectedCufe == null || _detectedCufe!.isEmpty) {
+    if (_detectedCufe == null || _detectedCufe!.contains("No se encontró")) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("No hay un CUFE válido para procesar")),
       );
       return;
     }
 
-    // Registramos la tarea única para Workmanager
+    setState(() {
+      _isDownloading = true; // Mostramos el letrero azul
+    });
+
     Workmanager().registerOneOffTask(
-      "downloadPdfTask_${DateTime.now().millisecondsSinceEpoch}", // ID único de instancia
-      "downloadPdfTask", // Nombre de la tarea que definiste en el callbackDispatcher
+      "downloadPdfTask_${DateTime.now().millisecondsSinceEpoch}",
+      "downloadPdfTask",
       inputData: {
-        'cufe': _detectedCufe, // Pasamos el CUFE extraído por el OCR
+        'cufe': _detectedCufe,
       },
       constraints: Constraints(
-        networkType: NetworkType.connected, // Solo si hay internet
-      ),
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text("Descarga iniciada en segundo plano. Te notificaremos al terminar."),
-        backgroundColor: Colors.green,
+        networkType: NetworkType.connected,
       ),
     );
   }
 
-
-  //Eliminar foto del CUFE
+  // Eliminar foto del CUFE
   Future<void> _deletePhoto() async {
     try {
       bool confirm = await showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text("¿Eliminar factura?"),
-          content: const Text("Esta acción borrará la foto de forma permanente."),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text("CANCELAR"),
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text("¿Eliminar factura?"),
+              content: const Text("Esta acción borrará la foto de forma permanente."),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: const Text("CANCELAR"),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: const Text("ELIMINAR", style: TextStyle(color: Colors.red)),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text("ELIMINAR", style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        ),
-      ) ?? false;
+          ) ??
+          false;
 
       if (confirm) {
         if (await widget.imageFile.exists()) {
           await widget.imageFile.delete();
         }
-
         if (mounted) {
-          // IMPORTANTE: Devolvemos 'true' al hacer el pop
-          Navigator.pop(context, true); 
+          Navigator.pop(context, true);
         }
       }
     } catch (e) {
@@ -164,10 +155,8 @@ class _CufesDetailScreenState extends State<CufesDetailScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
-    // Definimos la altura aquí para que el context sea válido
     final double halfScreenHeight = MediaQuery.of(context).size.height / 2;
 
     return Scaffold(
@@ -177,130 +166,169 @@ class _CufesDetailScreenState extends State<CufesDetailScreen> {
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black87),
-        // AGREGAMOS EL BOTÓN AQUÍ
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-            onPressed: _deletePhoto,
+            onPressed: _isDownloading ? null : _deletePhoto,
             tooltip: "Eliminar factura",
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 1. Contenedor de la Imagen (Mitad de pantalla y esquinas redondas)
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Container(
-                height: halfScreenHeight,
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.black12,
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.08),
-                      blurRadius: 15,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: InteractiveViewer(
-                    minScale: 0.5,
-                    maxScale: 4.0,
-                    child: Image.file(
-                      widget.imageFile,
-                      width: double.infinity,
-                      height: halfScreenHeight,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Center(
-              child: ElevatedButton.icon(
-                onPressed: _startBackgroundDownload,
-                icon: const Icon(Icons.cloud_download),
-                label: const Text("Descargar PDF"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Fecha de Captura",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black54,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    "CUFE: $_detectedCufe",
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black54,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _fileDate,
-                    style: const TextStyle(fontSize: 16, color: Colors.black54),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  const Text(
-                    "Texto Extraído",
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black54,
-                    ),
-                  ),
-                  const Divider(height: 20),
-
-                  // Caja de texto del OCR
-                  Container(
+      body: Stack(
+        children: [
+          SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 1. Contenedor de la Imagen
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Container(
+                    height: halfScreenHeight,
                     width: double.infinity,
-                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.grey[50],
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.grey[200]!),
+                      color: Colors.black12,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 15,
+                          offset: const Offset(0, 8),
+                        ),
+                      ],
                     ),
-                    child: SelectableText(
-                      // Usamos Selectable para poder copiar el texto
-                      _extractedText,
-                      style: const TextStyle(
-                        fontFamily: 'monospace',
-                        fontSize: 13,
-                        color: Colors.black87,
-                        height: 1.5,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(24),
+                      child: InteractiveViewer(
+                        minScale: 0.5,
+                        maxScale: 4.0,
+                        child: Image.file(
+                          widget.imageFile,
+                          width: double.infinity,
+                          height: halfScreenHeight,
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 40), // Espacio extra al final
-                ],
+                ),
+                
+                const SizedBox(height: 10),
+                
+                Center(
+                  child: ElevatedButton.icon(
+                    onPressed: _isDownloading ? null : _startBackgroundDownload,
+                    icon: const Icon(Icons.cloud_download),
+                    label: const Text("Descargar PDF"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueAccent,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: Colors.grey[300],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        "CUFE / CUDE Detectado",
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black54),
+                      ),
+                      const SizedBox(height: 6),
+                      SelectableText(
+                        _detectedCufe ?? "No detectado",
+                        style: const TextStyle(fontSize: 13, fontFamily: 'monospace', color: Colors.blueGrey),
+                      ),
+                      const SizedBox(height: 15),
+                      const Text(
+                        "Fecha de Captura",
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black54),
+                      ),
+                      Text(_fileDate, style: const TextStyle(fontSize: 15, color: Colors.black87)),
+                      
+                      const SizedBox(height: 24),
+                      const Text(
+                        "Texto Extraído (OCR)",
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black54),
+                      ),
+                      const Divider(height: 20),
+
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.grey[50],
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.grey[200]!),
+                        ),
+                        child: SelectableText(
+                          _extractedText,
+                          style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                            color: Colors.black87,
+                            height: 1.4,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 100), // Espacio para que el letrero no tape el contenido final
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // LETRERO PERSISTENTE (Estilo Bill Details)
+          if (_isDownloading)
+            Positioned(
+              bottom: 20,
+              left: 15,
+              right: 15,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E88E5), // Azul intenso
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Text(
+                        "Descarga iniciada. Te notificaremos cuando el PDF esté listo.",
+                        style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white70, size: 20),
+                      onPressed: () => setState(() => _isDownloading = false),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

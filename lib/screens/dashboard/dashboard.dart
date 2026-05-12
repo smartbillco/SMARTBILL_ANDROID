@@ -120,25 +120,35 @@ class _DashboardScreenState extends State<DashboardScreen> with RouteAware {
 
   //Get bills amount
   Future<void> getNumberOfBills() async {
-    if (mounted) {
-      var ocrReceipts = await ocrService.fetchOcrReceipts();
-      var resultXmls = await xmlhandler.getXmls();
-      var resultPdfs = await pdfService.fetchAllPdfs();
-      var allColombianBills = await colombianBill.getColombianBills();
-      var allPeruvianBills = await peruvianBill.getPeruvianBills();
-      var total = await resultXmls.length +
-          resultPdfs.length +
-          allColombianBills.length +
-          allPeruvianBills.length +
-          ocrReceipts.length;
+    if (!mounted) return; // Validación inicial
 
+    try {
+      // Lanzamos las peticiones
+      final ocrReceipts = await ocrService.fetchOcrReceipts();
+      final resultXmls = await xmlhandler.getXmls();
+
+      // Esta es la llamada que suele disparar el plugin conflictivo
+      final resultPdfs = await pdfService.fetchAllPdfs();
+
+      final allColombianBills = await colombianBill.getColombianBills();
+      final allPeruvianBills = await peruvianBill.getPeruvianBills();
+
+      // Verificamos de nuevo antes de actualizar el estado
       if (mounted) {
         setState(() {
-          billsAmount = total;
+          billsAmount = resultXmls.length +
+              resultPdfs.length +
+              allColombianBills.length +
+              allPeruvianBills.length +
+              ocrReceipts.length;
         });
       }
+    } catch (e) {
+      debugPrint("Error cargando facturas: $e");
+      // Si hay un error de "Reply already submitted", aquí se captura y no rompe la app
     }
   }
+
 
   //Logout
   void logginOut() {

@@ -2,32 +2,25 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
 class DatabaseConnection {
-  static final DatabaseConnection _instance =
-      DatabaseConnection._internal();
-
+  static final DatabaseConnection _instance = DatabaseConnection._internal();
   factory DatabaseConnection() => _instance;
-
   DatabaseConnection._internal();
 
   Database? _db;
 
-  /// Return database instance
   Future<Database> get db async {
     _db ??= await openDb();
     return _db!;
   }
 
   Future<Database> openDb() async {
-
     var databasesPath = await getDatabasesPath();
     var path = join(databasesPath, 'smartbill.db');
 
     return _db = await openDatabase(
       path,
-      version: 2, // IMPORTANT: increase version
-
+      version: 2,
       onCreate: (Database db, int version) async {
-
         await db.execute('''
           CREATE TABLE IF NOT EXISTS xml_files (
             _id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -35,21 +28,26 @@ class DatabaseConnection {
           )
         ''');
 
+        // Tabla de PDFs con CUFE Único
         await db.execute('''
           CREATE TABLE IF NOT EXISTS pdfs (
             _id INTEGER PRIMARY KEY AUTOINCREMENT,
             cufe TEXT UNIQUE,
             nit TEXT,
             date TEXT,
-            total_amount REAL
+            total_amount REAL,
+            company_name TEXT
           )
         ''');
+
+        // Índice para búsquedas rápidas por CUFE
+        await db.execute('CREATE INDEX idx_pdfs_cufe ON pdfs (cufe)');
 
         await db.execute('''
           CREATE TABLE IF NOT EXISTS colombian_bill (
             _id INTEGER PRIMARY KEY AUTOINCREMENT,
             bill_number TEXT NOT NULL,
-            company_name TEXT, -- NEW COLUMN
+            company_name TEXT,
             date TEXT,
             time TEXT,
             nit TEXT,
@@ -113,21 +111,16 @@ class DatabaseConnection {
           )
         ''');
       },
-
-      /// MIGRATIONS
       onUpgrade: (Database db, int oldVersion, int newVersion) async {
-
-        // Version 1 -> 2
         if (oldVersion < 2) {
-
-          await db.execute('''
-            ALTER TABLE colombian_bill
-            ADD COLUMN company_name TEXT
-          ''');
-
+          // Intentar añadir la columna si no existe (evita errores si ya estaba)
+          try {
+            await db.execute('ALTER TABLE colombian_bill ADD COLUMN company_name TEXT');
+          } catch (e) {
+            print("La columna ya existía");
+          }
         }
       },
-
       onDowngrade: onDatabaseDowngradeDelete,
     );
   }
@@ -139,13 +132,11 @@ class DatabaseConnection {
     }
   }
 
-  Future deleteDb() async {
-
+  Future<void> deleteDb() async {
     var databasesPath = await getDatabasesPath();
     var path = join(databasesPath, 'smartbill.db');
-
     await deleteDatabase(path);
-
+    _db = null;
     print("Database deleted");
   }
 }

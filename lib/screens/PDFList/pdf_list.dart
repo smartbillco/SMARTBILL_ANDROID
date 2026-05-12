@@ -11,6 +11,8 @@ class PDFListScreen extends StatelessWidget {
   final List<Map<String, dynamic>> extractedText;
   final num totalAmount;
   final Function(int) onDelete;
+  // Función para refrescar los datos desde el backend/disco
+  final Future<void> Function() onRefresh;
 
   const PDFListScreen({
     super.key,
@@ -19,6 +21,7 @@ class PDFListScreen extends StatelessWidget {
     required this.extractedText,
     required this.totalAmount,
     required this.onDelete,
+    required this.onRefresh,
   });
 
   void openPdf(String path) async {
@@ -79,59 +82,91 @@ class PDFListScreen extends StatelessWidget {
           
           const SizedBox(height: 15),
 
-          // Lista de PDFs
+          // Lista de PDFs con RefreshIndicator
           Expanded(
-            child: pdfFiles.isEmpty
-                ? const Center(
-                    child: Text("NO TIENES PDFS", 
-                    style: TextStyle(fontWeight: FontWeight.w900, color: Colors.grey)))
-                : ListView.builder(
-                    itemCount: pdfFiles.length,
-                    itemBuilder: (context, index) {
-                      final file = pdfFiles[index];
-                      final data = (index < extractedText.length) ? extractedText[index] : {};
-                      
-                      // Obtener el total individual para este item
-                      double itemTotal = double.tryParse(data['total']?.toString() ?? '0') ?? 0;
-
-                      return Card(
-                        elevation: 0,
-                        margin: const EdgeInsets.only(bottom: 10),
-                        shape: const RoundedRectangleBorder(
-                          side: BorderSide(color: Colors.black12, width: 1),
-                        ),
-                        child: ListTile(
-                          onTap: () => openPdf(file.path),
-                          onLongPress: () => _showDeleteDialog(context, index),
-                          leading: Container(
-                            width: 45,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.grey[300]!),
+            child: RefreshIndicator(
+              color: Colors.black,
+              backgroundColor: Colors.white,
+              onRefresh: onRefresh, // Gatillo de actualización
+              child: pdfFiles.isEmpty
+                  ? ListView(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      children: [
+                        SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+                        const Center(
+                          child: Text(
+                            "NO TIENES PDFS", 
+                            style: TextStyle(
+                              fontWeight: FontWeight.w900, 
+                              color: Colors.grey
                             ),
-                            child: pdfThumbnails[file.path] != null
-                                ? Image(image: pdfThumbnails[file.path]!, fit: BoxFit.cover)
-                                : const Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black)),
                           ),
-                          title: Text(
-                            data['bill_number'] ?? "Procesando...",
-                            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(data['company'] ?? '', style: const TextStyle(fontSize: 11)),
-                              Text(data['date'] ?? '', style: const TextStyle(fontSize: 11)),
-                              Text(
-                                currencyFormatter.format(itemTotal),
-                                style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black, fontSize: 12),
-                              ),
-                            ],
-                          ),
-                          trailing: const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.black26),
                         ),
-                      );
-                    },
-                  ),
+                      ],
+                    )
+                  : ListView.builder(
+                      // IMPORTANTE: physics permite que el refresh funcione aunque haya pocos items
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      itemCount: pdfFiles.length,
+                      itemBuilder: (context, index) {
+                        final file = pdfFiles[index];
+                        final data = (index < extractedText.length) ? extractedText[index] : {};
+                        
+                        // Obtener el total individual para este item
+                        double itemTotal = double.tryParse(data['total']?.toString() ?? '0') ?? 0;
+
+                        return Card(
+                          elevation: 0,
+                          margin: const EdgeInsets.only(bottom: 10),
+                          shape: const RoundedRectangleBorder(
+                            side: BorderSide(color: Colors.black12, width: 1),
+                          ),
+                          child: ListTile(
+                            onTap: () => openPdf(file.path),
+                            onLongPress: () => _showDeleteDialog(context, index),
+                            leading: Container(
+                              width: 45,
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey[300]!),
+                              ),
+                              child: pdfThumbnails[file.path] != null
+                                  ? Image(image: pdfThumbnails[file.path]!, fit: BoxFit.cover)
+                                  : const Center(
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2, 
+                                        color: Colors.black
+                                      )
+                                    ),
+                            ),
+                            title: Text(
+                              data['bill_number'] ?? "Procesando...",
+                              style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(data['company'] ?? '', style: const TextStyle(fontSize: 11)),
+                                Text(data['date'] ?? '', style: const TextStyle(fontSize: 11)),
+                                Text(
+                                  currencyFormatter.format(itemTotal),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold, 
+                                    color: Colors.black, 
+                                    fontSize: 12
+                                  ),
+                                ),
+                              ],
+                            ),
+                            trailing: const Icon(
+                              Icons.arrow_forward_ios, 
+                              size: 14, 
+                              color: Colors.black26
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
           ),
         ],
       ),

@@ -1,11 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:provider/provider.dart';
+import 'package:smartbill/providers/download_provider.dart';
 import 'package:smartbill/screens/receipts/receipt_screen.dart';
 import 'package:smartbill/screens/receipts/receipt_widgets/delete_dialog.dart';
 import 'package:smartbill/services/ocr_receipts.dart';
-import 'package:smartbill/services/dianReceiptService.dart';
-import 'package:workmanager/workmanager.dart';
+import 'package:smartbill/services/dian_receipt_service.dart';
 
 class BillDetailScreen extends StatefulWidget {
   final Map receipt;
@@ -58,43 +59,30 @@ class _BillDetailScreenState extends State<BillDetailScreen> {
   }
 
   Future<void> downloadPdfFile(String? cufe) async {
-    if (cufe == null || cufe.isEmpty || cufe == "No encontrado") {
-      _showSnackBar("CUFE no válido para descarga.", Colors.black87);
-      return;
-    }
+    final downloadProvider =
+        Provider.of<DownloadProvider>(context, listen: false);
+
+    if (cufe == null || cufe.isEmpty) return;
+
+    if (downloadProvider.isDownloading) return;
+
+    downloadProvider.startDownload("Factura");
 
     try {
-      // 1. Programar la tarea en segundo plano (Worker que definimos en el main)
-      await Workmanager().registerOneOffTask(
-        "download_${cufe.hashCode}_${DateTime.now().millisecondsSinceEpoch}",
-        "downloadPdfTask",
-        inputData: {"cufe": cufe},
-        constraints: Constraints(
-          networkType: NetworkType.connected,
-        ),
-      );
+      final response = await dianReceiptService.getPdfDian(cufe);
 
-      // 2. Notificar al usuario que el proceso inició
-      _showSnackBar(
-          "Iniciando descarga en segundo plano. Tu factura estará disponible en un momento.",
-          Colors.blueGrey);
+      if (response.pdf.isNotEmpty) {
+        await dianReceiptService.base64ToPdfAndSave(response.pdf, cufe);
 
-      // No ponemos isLoading = false porque ya no bloqueamos la pantalla
+        downloadProvider.showResult("¡Factura guardada exitosamente!", true);
+      } else {
+        throw Exception("PDF empty");
+      }
     } catch (e) {
-      debugPrint("Error programando tarea: $e");
-      _showSnackBar("No se pudo programar la descarga.", Colors.redAccent);
-    }
-  }
+      debugPrint("Error downloading: $e");
 
-  void _showSnackBar(String message, Color backgroundColor) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: backgroundColor,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-    );
+      downloadProvider.showResult("No se pudo descargar la factura. Intentalo mas tarde.", false);
+    }
   }
 
   //Validar el cufe

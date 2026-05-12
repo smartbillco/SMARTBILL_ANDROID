@@ -190,6 +190,16 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     }
   }
 
+  Future<void> refreshPdfs() async {
+    // 1. IMPORTANTE: Cambiamos isLoaded a false para permitir la recarga
+    setState(() {
+      isLoaded = false; 
+    });
+
+    // 2. Llamamos a la lógica de carga (ahora sí pasará el check inicial)
+    await loadPdfs();
+  }
+
   // ------- UI Logic --------- //
 
   void switchPage(int index) {
@@ -213,6 +223,9 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
     final List<Widget> pages = [
       const MyReceiptsPage(),
       PDFListScreen(
+        onRefresh: () async {
+          await refreshPdfs();
+        },
         pdfFiles: pdfFiles,
         pdfThumbnails: pdfThumbnails,
         extractedText: extractedText,

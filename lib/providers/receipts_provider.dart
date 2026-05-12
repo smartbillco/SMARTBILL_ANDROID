@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smartbill/models/dian_receipts.dart';
-import 'package:smartbill/services/dianReceiptService.dart';
+import 'package:smartbill/services/dian_receipt_service.dart';
 
 class ReceiptsProvider extends ChangeNotifier{
 
